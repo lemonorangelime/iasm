@@ -39,9 +39,9 @@ int decode_type(char * type) {
 }
 
 int execute_builtins(char * line) {
-	char regname[64];
-	char filename[128];
-	char type[32];
+	char regname[64] = {0};
+	char filename[128] = {0};
+	char type[32] = {0};
 	if (strcmp(line, "exit") == 0) {
 		return 2;
 	}
