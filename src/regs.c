@@ -5,12 +5,14 @@
 #include <asm.h>
 #include <regs.h>
 
+// dont care calling these whatever
 char * regnames[] = {"none", "rax", "rbx", "rcx", "rdx", "rsp", "rbp", "rsi", "rdi", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "rflags"};
 char * reg32names[] = {"none", "eax", "ebx", "ecx", "edx", "esp", "ebp", "esi", "edi", "r8d", "r9d", "r10d", "r11d", "r12d", "r13d", "r14d", "r15d", "eflags"};
 char * reg16names[] = {"none", "ax", "bx", "cx", "dx", "sp", "bp", "si", "di", "r8w", "r9w", "r10w", "r11w", "r12w", "r13w", "r14w", "r15w", "flags"};
 char * fpuregnames[] = {"none", "st0", "st1", "st2", "st3", "st4", "st5", "st6", "st7"};
 char * xmmregnames[] = {"none", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7", "xmm8", "xmm9", "xmm10", "xmm11", "xmm12", "xmm13", "xmm14", "xmm15"};
 char * ymmregnames[] = {"none", "ymm0", "ymm1", "ymm2", "ymm3", "ymm4", "ymm5", "ymm6", "ymm7", "ymm8", "ymm9", "ymm10", "ymm11", "ymm12", "ymm13", "ymm14", "ymm15"};
+
 int reg_count = sizeof(regnames) / sizeof(regnames[0]);
 int fpureg_count = sizeof(fpuregnames) / sizeof(fpuregnames[0]);
 int xmmreg_count = sizeof(xmmregnames) / sizeof(xmmregnames[0]);
@@ -20,8 +22,7 @@ int xmm_type = INT128;
 
 void print_uppercase(char * string) {
 	while (*string) {
-		putchar(toupper(*string));
-		string++;
+		putchar(toupper(*string++));
 	}
 }
 
@@ -50,7 +51,7 @@ void print_xmm(void * p, int as) {
 	}
 }
 
-void dump_registers() {
+void dump_registers() { // dont care about this either
 	uint64_t * p = (uint64_t *) &register_save;
 	uint64_t * rp = (uint64_t *) &rregister_save;
 	int printed = 1;
@@ -114,35 +115,35 @@ int lookup_index(char ** regnames, int count, char * name) {
 }
 
 uint64_t * lookup_register(char * name) {
-	uint64_t * p = (uint64_t *) &register_save;
-	int i = lookup_index(regnames, reg_count, name);
-	i |= lookup_index(reg32names, reg_count, name);
-	i |= lookup_index(reg16names, reg_count, name);
-	if (i == 0) {
+	uint64_t * registers = (uint64_t *) &register_save;
+	int index = lookup_index(regnames, reg_count, name);
+	index |= lookup_index(reg32names, reg_count, name);
+	index |= lookup_index(reg16names, reg_count, name);
+	if (index == 0) {
 		return NULL;
 	}
-	i -= 1;
-	return &p[i];
+	index -= 1;
+	return &registers[index];
 }
 
 fpu_float_t * lookup_fpuregister(char * name) {
-	fpu_float_t * p = &fpu_save.st0;
-	int i = lookup_index(fpuregnames, fpureg_count, name);
-	if (i == 0) {
+	fpu_float_t * registers = &fpu_save.st0;
+	int index = lookup_index(fpuregnames, fpureg_count, name);
+	if (index == 0) {
 		return NULL;
 	}
-	i -= 1;
-	return &p[i];
+	index -= 1;
+	return &registers[index];
 }
 
 xmm_float64_t * lookup_xmmregister(char * name) {
-	xmm_float64_t * p = &fpu_save.xmm0;
-	int i = lookup_index(xmmregnames, xmmreg_count, name);
-	if (i == 0) {
+	xmm_float64_t * registers = &fpu_save.xmm0;
+	int index = lookup_index(xmmregnames, xmmreg_count, name);
+	if (index == 0) {
 		return NULL;
 	}
-	i -= 1;
-	return &p[i];
+	index -= 1;
+	return &registers[index];
 }
 
 uint64_t lookup_register_mask(char * name) {

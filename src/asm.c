@@ -34,7 +34,7 @@ void setup_executable_buffer() {
 	return_point = (uint64_t) exec_buffer;
 }
 
-uint64_t execute(void * buffer, ssize_t size, int skip) {
+uint64_t asm_execute(void * buffer, ssize_t size, int skip) {
 	memcpy(exec_buffer + exec_buffer_size, buffer, size);
 
 	exec_buffer_size += size;
@@ -44,7 +44,8 @@ uint64_t execute(void * buffer, ssize_t size, int skip) {
 	exec_buffer[exec_buffer_size + 3] = 0x00;
 	exec_buffer[exec_buffer_size + 4] = 0x00;
 	exec_buffer[exec_buffer_size + 5] = 0x00;
-	*(uint64_t *) &exec_buffer[exec_buffer_size + 6] = (uint64_t) &asm_continue;
+	*(uint64_t *) &exec_buffer[exec_buffer_size + 6] = (uint64_t) asm_continue;
+
 	if (!skip) {
 		asm_resume();
 	}

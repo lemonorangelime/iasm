@@ -9,7 +9,7 @@ extern int context_switching;
 
 void setup_executable_buffer();
 uint64_t asm_resume();
-uint64_t execute(void * buffer, ssize_t size, int skip);
+uint64_t asm_execute(void * buffer, ssize_t size, int skip);
 int assemble(char * instruction, void ** buffer, ssize_t * size);
 void asm_reset();
 void reload_state();

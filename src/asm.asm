@@ -60,11 +60,10 @@ caller_r15_save: dq 0
 caller_rflags_save: dq 0
 
 align 16
-rfpu_save: times 4096 db 0
+caller_fpu_save: times 4096 db 0
 align 4
 
 return_point: dq 0
-
 context_switching: dd 0
 
 align 16
@@ -99,7 +98,7 @@ asm_resume:
 
 	xor rax, rax
 	xor rdx, rdx
-	fxsave [rfpu_save]
+	fxsave [caller_fpu_save]
 
 	fxrstor [fpu_save]
 	mov rax, [rflags_save]
@@ -158,7 +157,7 @@ reload_state:
 	push rax
 	popfq
 
-	fxrstor [rfpu_save]
+	fxrstor [caller_fpu_save]
 
 	mov rax, [caller_rax_save]
 	mov rbx, [caller_rbx_save]
@@ -188,7 +187,7 @@ fpu_float_to_double:
 setup_fpu:
 	xor rax, rax
 	xor rdx, rdx
-	fxsave [rfpu_save]
+	fxsave [caller_fpu_save]
 	finit
 	xor rax, rax
 	xor rdx, rdx
@@ -209,5 +208,5 @@ setup_fpu:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	fxsave [fpu_save]
-	fxrstor [rfpu_save]
+	fxrstor [caller_fpu_save]
 	ret

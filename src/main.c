@@ -127,6 +127,7 @@ int execute_builtins(char * line) {
 		char * name = swap ? type : regname;
 		char * type = swap ? regname : type;
 		uint64_t * p = lookup_register(name);
+		// future: allow this `print FLOAT64 xmm0` thing for general registers aswell?
 		if (!p) {
 			fpu_float_t * f = lookup_fpuregister(name);
 			if (!f) {
@@ -148,34 +149,37 @@ int execute_builtins(char * line) {
 	return 0;
 }
 
-int handle_statement(char * line, size_t lsize) {
-	int bmatches = 0;
-	if (lsize == 0) {
-		return 0;
-	}
+int handle_statement(char * line) {
+	int builtin_matches = 0;
 	cut_newline(line);
-	bmatches = execute_builtins(line);
-	if (bmatches == 2) {
+	builtin_matches = execute_builtins(line);
+	if (builtin_matches == 2) {
 		return 1;
-	} else if (bmatches == 1) {
+	} else if (builtin_matches == 1) {
 		return 0;
 	}
+
 	void * buffer = NULL;
-	ssize_t size;
+	ssize_t size = 0;
 	int skip = line[0] == '~';
 	int stat = assemble(line + skip, &buffer, &size);
+	if (size == 0) {
+		return 0; // dont waste time executing nothing
+	}
 	if (size == -1 || stat != 0) {
 		printf("assembler error\n");
 		asm_rewind();
 		return 0;
 	}
-	execute(buffer, size, paused || skip);
+	asm_execute(buffer, size, paused || skip);
 	free(buffer);
 	return 0;
 }
 
 ssize_t read_input(char ** line, size_t * size) {
-	ssize_t r = getline(line, size, stdin);
+	ssize_t r = 0;
+	write(1, "> ", 2);
+	r = getline(line, size, stdin);
 	if (r == -1) {
 		putchar('\n');
 	}
@@ -184,16 +188,17 @@ ssize_t read_input(char ** line, size_t * size) {
 
 int main(int argc, char * argv[]) {
 	char * line = NULL;
-	size_t lsize = 0;
+	size_t line_size = 0;
 	register_handlers();
 	setup_executable_buffer();
 	asm_reset();
-	write(1, "> ", 2);
-	while (read_input(&line, &lsize) != -1) {
-		if (handle_statement(line, lsize)) {
+	while (read_input(&line, &line_size) != -1) {
+		if (line_size == 0) {
+			continue;
+		}
+		if (handle_statement(line)) {
 			break;
 		}
-		write(1, "> ", 2);
 	}
 	return 0;
 }
