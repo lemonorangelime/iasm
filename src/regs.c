@@ -160,3 +160,21 @@ uint64_t lookup_register_mask(char * name) {
 	}
 	return 0;
 }
+
+char * int64_specifier = "0x%.16x";
+char * int32_specifier = "0x%.8x";
+char * int16_specifier = "0x%.4x";
+char * lookup_register_specifier(char * name) {
+	if (lookup_index(regnames, reg_count, name) != 0) {
+		return int64_specifier;
+	}
+
+	if (lookup_index(reg32names, reg_count, name) != 0) {
+		return int32_specifier;
+	}
+
+	if (lookup_index(reg16names, reg_count, name) != 0) {
+		return int16_specifier;
+	}
+	return 0;
+}

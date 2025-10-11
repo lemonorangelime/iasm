@@ -126,5 +126,6 @@ void print_xmm(void * p, int as);
 void dump_registers();
 uint64_t * lookup_register(char * name);
 uint64_t lookup_register_mask(char * name);
+char * lookup_register_specifier(char * name);
 fpu_float_t * lookup_fpuregister(char * name);
 xmm_float64_t * lookup_xmmregister(char * name);
