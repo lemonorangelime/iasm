@@ -1,3 +1,7 @@
+ifeq ($(PREFIX),)
+        PREFIX := /usr/local
+endif
+
 BUILD_DIR := build
 
 CC := gcc
@@ -38,3 +42,15 @@ $(BUILD_DIR)/%.asm.o: src/%.asm
 $(OUTPUT): $(OBJS) $(ASM_OBJS)
 	$(CC) $(CCFLAGS) $^ -o $@
 	strip --strip-unneeded $@
+
+# "iasm" seems to be a pretty common name
+install: $(OUTPUT)
+	if [ -f "$(PREFIX)/bin/$(OUTPUT)" ]; then \
+		echo "\e[0;31mERROR\e[0m: File conflict. $(PREFIX)/bin/$(OUTPUT) already exists"; \
+		exit; \
+	else \
+		install -m 775 $(OUTPUT) $(PREFIX)/bin/; \
+	fi
+
+uninstall:
+	rm $(PREFIX)/bin/$(OUTPUT)
