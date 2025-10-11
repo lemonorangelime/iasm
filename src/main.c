@@ -57,11 +57,22 @@ int execute_builtins(char * line) {
 		paused = 0;
 		return 1;
 	}
+	if (strcmp(line, "help") == 0) {
+		puts("exit        |  exit program");
+		puts("dump        |  print all registers");
+		puts("freeze      |  pause execution");
+		puts("unfreeze    |  unpause execution");
+		puts("xmm_type    |  set default type for xmm registers (INT128/64/32 / FLOAT64/32)");
+		puts("save_state  |  save state to file (filename)");
+		puts("load_state  |  load state from file (filename)");
+		puts("print       |  print value of register (register)");
+		return 1;
+	}
 	if (sscanf(line, "xmm_type %s", filename) > 0) {
 		xmm_type = decode_type(filename);
 		return 1;
 	}
-	if (sscanf(line, "dump_state %s", filename) > 0) {
+	if (sscanf(line, "save_state %s", filename) > 0) {
 		int fd = open(filename, O_CREAT | O_RDWR, 0664);
 		int asmfd = open("/tmp/.temp_asm.asm", O_CREAT | O_RDWR, 0664);
 		if ((fd < 0) || (asmfd < 0)) {
