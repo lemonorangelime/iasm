@@ -11,7 +11,7 @@ ssize_t fdsize(int fd) {
 }
 
 ssize_t fsize(char * filename) {
-	int fd = open(filename, O_RDONLY, 0644);
+	int fd = open(filename, O_RDONLY, 0664);
 	ssize_t size = fdsize(fd);
 	close(fd);
 	return size;
