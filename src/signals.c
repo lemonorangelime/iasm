@@ -10,7 +10,7 @@
 
 char * messages[] = {
 	"",
-	"",
+	"Control-C from Keyboard",
 	"",
 	"Illegal instruction",
 	"Breakpoint for debugging",
@@ -44,18 +44,26 @@ char * messages[] = {
 	"Equivalent to SIGSYS"
 };
 
+int sigint = 0;
+
 void signal_handler(int signum, siginfo_t * info, ucontext_t * context) {
 	signal(signum, (void *) signal_handler);
+
+	sigint = signum == SIGINT;
+	if (sigint) {
+		putchar('\n');
+	}
 
 	char * message = messages[signum - 1];
 	printf(*message ? "%s\n" : "", message);
 	if (context_switching && *message) {
 		context->uc_mcontext.gregs[REG_RIP] = (uint64_t) reload_state; // return to reload_state
 		return;
-	} else {
+	} else if (!sigint) {
 		printf("fatal internal error (sig %d)\n", signum);
 		exit(-1);
 	}
+	write(1, "> ", 2);
 }
 
 void register_handlers() {
@@ -65,4 +73,5 @@ void register_handlers() {
 	signal(SIGFPE, (void *) signal_handler);
 	signal(SIGTRAP, (void *) signal_handler);
 	signal(SIGSYS, (void *) signal_handler);
+	signal(SIGINT, (void *) signal_handler);
 }

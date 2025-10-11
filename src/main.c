@@ -174,6 +174,14 @@ int handle_statement(char * line, size_t lsize) {
 	return 0;
 }
 
+ssize_t read_input(char ** line, size_t * size) {
+	ssize_t r = getline(line, size, stdin);
+	if (r == -1) {
+		putchar('\n');
+	}
+	return r;
+}
+
 int main(int argc, char * argv[]) {
 	char * line = NULL;
 	size_t lsize = 0;
@@ -181,7 +189,7 @@ int main(int argc, char * argv[]) {
 	setup_executable_buffer();
 	asm_reset();
 	write(1, "> ", 2);
-	while (getline(&line, &lsize, stdin) != -1) {
+	while (read_input(&line, &lsize) != -1) {
 		if (handle_statement(line, lsize)) {
 			break;
 		}

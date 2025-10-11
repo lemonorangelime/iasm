@@ -1,5 +1,5 @@
 #pragma once
 
-extern int signaled;
+extern int sigint;
 
 void register_handlers();
