@@ -1,13 +1,11 @@
 BUILD_DIR := build
 
 CC := gcc
-S := gcc
 ASM := nasm
 ASMFLAGS := -f elf64 -I include/
 CCFLAGS := -Ofast -ftree-vectorize -fomit-frame-pointer -m64 -mhard-float -fno-stack-protector -Iinclude -Wno-address-of-packed-member -z noexecstack
 LD := ld
 LDFLAGS := --strip-all --discard-all --discard-locals --strip-debug
-AR := ar
 
 STRUCTURE := $(shell find src/ -type d)
 FILES := $(addsuffix /*,$(STRUCTURE))
