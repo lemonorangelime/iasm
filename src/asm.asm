@@ -74,120 +74,120 @@ section .text
 
 ; close your eyes
 asm_resume:
-	mov DWORD [context_switching], 1
-	mov QWORD [caller_rax_save], rax
-	mov QWORD [caller_rbx_save], rbx
-	mov QWORD [caller_rcx_save], rcx
-	mov QWORD [caller_rdx_save], rdx
-	mov QWORD [caller_rsp_save], rsp
-	mov QWORD [caller_rbp_save], rbp
-	mov QWORD [caller_rsi_save], rsi
-	mov QWORD [caller_rdi_save], rdi
-	mov QWORD [caller_r8_save], r8
-	mov QWORD [caller_r9_save], r9
-	mov QWORD [caller_r10_save], r10
-	mov QWORD [caller_r11_save], r11
-	mov QWORD [caller_r12_save], r12
-	mov QWORD [caller_r13_save], r13
-	mov QWORD [caller_r14_save], r14
-	mov QWORD [caller_r15_save], r15
+	mov DWORD [rel context_switching], 1
+	mov QWORD [rel caller_rax_save], rax
+	mov QWORD [rel caller_rbx_save], rbx
+	mov QWORD [rel caller_rcx_save], rcx
+	mov QWORD [rel caller_rdx_save], rdx
+	mov QWORD [rel caller_rsp_save], rsp
+	mov QWORD [rel caller_rbp_save], rbp
+	mov QWORD [rel caller_rsi_save], rsi
+	mov QWORD [rel caller_rdi_save], rdi
+	mov QWORD [rel caller_r8_save], r8
+	mov QWORD [rel caller_r9_save], r9
+	mov QWORD [rel caller_r10_save], r10
+	mov QWORD [rel caller_r11_save], r11
+	mov QWORD [rel caller_r12_save], r12
+	mov QWORD [rel caller_r13_save], r13
+	mov QWORD [rel caller_r14_save], r14
+	mov QWORD [rel caller_r15_save], r15
 
 	pushfq
 	pop rax
-	mov QWORD [caller_rflags_save], rax
+	mov QWORD [rel caller_rflags_save], rax
 
 	xor rax, rax
 	xor rdx, rdx
-	fxsave [caller_fpu_save]
+	fxsave [rel caller_fpu_save]
 
-	fxrstor [fpu_save]
-	mov rax, [rflags_save]
+	fxrstor [rel fpu_save]
+	mov rax, [rel rflags_save]
 	push rax
 	popfq
 
-	mov rax, [rax_save]
-	mov rbx, [rbx_save]
-	mov rcx, [rcx_save]
-	mov rdx, [rdx_save]
-	mov rsp, [rsp_save]
-	mov rbp, [rbp_save]
-	mov rsi, [rsi_save]
-	mov rdi, [rdi_save]
-	mov r8, [r8_save]
-	mov r9, [r9_save]
-	mov r10, [r10_save]
-	mov r11, [r11_save]
-	mov r12, [r12_save]
-	mov r13, [r13_save]
-	mov r14, [r14_save]
-	mov r15, [r15_save]
+	mov rax, [rel rax_save]
+	mov rbx, [rel rbx_save]
+	mov rcx, [rel rcx_save]
+	mov rdx, [rel rdx_save]
+	mov rsp, [rel rsp_save]
+	mov rbp, [rel rbp_save]
+	mov rsi, [rel rsi_save]
+	mov rdi, [rel rdi_save]
+	mov r8, [rel r8_save]
+	mov r9, [rel r9_save]
+	mov r10, [rel r10_save]
+	mov r11, [rel r11_save]
+	mov r12, [rel r12_save]
+	mov r13, [rel r13_save]
+	mov r14, [rel r14_save]
+	mov r15, [rel r15_save]
 
-	jmp [return_point]
+	jmp [rel return_point]
 
 asm_continue:
-	mov QWORD [rax_save], rax
-	mov QWORD [rbx_save], rbx
-	mov QWORD [rcx_save], rcx
-	mov QWORD [rdx_save], rdx
-	mov QWORD [rsp_save], rsp
-	mov QWORD [rbp_save], rbp
-	mov QWORD [rsi_save], rsi
-	mov QWORD [rdi_save], rdi
-	mov QWORD [r8_save], r8
-	mov QWORD [r9_save], r9
-	mov QWORD [r10_save], r10
-	mov QWORD [r11_save], r11
-	mov QWORD [r12_save], r12
-	mov QWORD [r13_save], r13
-	mov QWORD [r14_save], r14
-	mov QWORD [r15_save], r15
+	mov QWORD [rel rax_save], rax
+	mov QWORD [rel rbx_save], rbx
+	mov QWORD [rel rcx_save], rcx
+	mov QWORD [rel rdx_save], rdx
+	mov QWORD [rel rsp_save], rsp
+	mov QWORD [rel rbp_save], rbp
+	mov QWORD [rel rsi_save], rsi
+	mov QWORD [rel rdi_save], rdi
+	mov QWORD [rel r8_save], r8
+	mov QWORD [rel r9_save], r9
+	mov QWORD [rel r10_save], r10
+	mov QWORD [rel r11_save], r11
+	mov QWORD [rel r12_save], r12
+	mov QWORD [rel r13_save], r13
+	mov QWORD [rel r14_save], r14
+	mov QWORD [rel r15_save], r15
 
-	mov rsp, [caller_rsp_save]
+	mov rsp, [rel caller_rsp_save]
 
 	pushfq
 	pop rax
-	mov QWORD [rflags_save], rax
+	mov QWORD [rel rflags_save], rax
 
 	xor rax, rax
 	xor rdx, rdx
-	fxsave [fpu_save]
+	fxsave [rel fpu_save]
 
 reload_state:
-	mov rax, [caller_rflags_save]
+	mov rax, [rel caller_rflags_save]
 	push rax
 	popfq
 
-	fxrstor [caller_fpu_save]
+	fxrstor [rel caller_fpu_save]
 
-	mov rax, [caller_rax_save]
-	mov rbx, [caller_rbx_save]
-	mov rcx, [caller_rcx_save]
-	mov rdx, [caller_rdx_save]
-	mov rsp, [caller_rsp_save]
-	mov rbp, [caller_rbp_save]
-	mov rsi, [caller_rsi_save]
-	mov rdi, [caller_rdi_save]
-	mov r8, [caller_r8_save]
-	mov r9, [caller_r9_save]
-	mov r10, [caller_r10_save]
-	mov r11, [caller_r11_save]
-	mov r12, [caller_r12_save]
-	mov r13, [caller_r13_save]
-	mov r14, [caller_r14_save]
-	mov r15, [caller_r15_save]
-	mov DWORD [context_switching], 0
+	mov rax, [rel caller_rax_save]
+	mov rbx, [rel caller_rbx_save]
+	mov rcx, [rel caller_rcx_save]
+	mov rdx, [rel caller_rdx_save]
+	mov rsp, [rel caller_rsp_save]
+	mov rbp, [rel caller_rbp_save]
+	mov rsi, [rel caller_rsi_save]
+	mov rdi, [rel caller_rdi_save]
+	mov r8, [rel caller_r8_save]
+	mov r9, [rel caller_r9_save]
+	mov r10, [rel caller_r10_save]
+	mov r11, [rel caller_r11_save]
+	mov r12, [rel caller_r12_save]
+	mov r13, [rel caller_r13_save]
+	mov r14, [rel caller_r14_save]
+	mov r15, [rel caller_r15_save]
+	mov DWORD [rel context_switching], 0
 	ret
 
 fpu_float_to_double:
 	fld TWORD [rdi]
-	fstp QWORD [fpu_temp]
-	movsd xmm0, [fpu_temp]
+	fstp QWORD [rel fpu_temp]
+	movsd xmm0, [rel fpu_temp]
 	ret
 
 setup_fpu:
 	xor rax, rax
 	xor rdx, rdx
-	fxsave [caller_fpu_save]
+	fxsave [rel caller_fpu_save]
 	finit
 	xor rax, rax
 	xor rdx, rdx
@@ -207,6 +207,6 @@ setup_fpu:
 	pxor xmm13, xmm13
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
-	fxsave [fpu_save]
-	fxrstor [caller_fpu_save]
+	fxsave [rel fpu_save]
+	fxrstor [rel caller_fpu_save]
 	ret
