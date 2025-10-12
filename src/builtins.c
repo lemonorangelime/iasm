@@ -159,7 +159,7 @@ int resolve_function(char * label) {
 		return 1;
 	}
 	uint64_t * p = buffer;
-	printf("%.16llx\n", *p);
+	printf("0x%.16llx\n", *p);
 	return 1;
 }
 
@@ -167,7 +167,7 @@ void print_topic(char * topic_name) {
 	help_topic_t * topic = help_topics;
 	int i = 0;
 	for (; i < topic_count; i++, topic++) {
-		if (strcmp(topic->name, topic_name)) {
+		if (strcmp(topic->name, topic_name) == 0) {
 			break;
 		}
 	}
@@ -204,7 +204,7 @@ int execute_builtins(char * line) {
 		puts("unfreeze    |  unpause execution");
 		puts("assemble    |  assemble instruction (assemble addsd xmm0, xmm1)");
 		puts("resolve     |  resolve address (resolve LABEL)");
-		puts("xmm_type    |  set default type for xmm registers (xmm_type INT128/64/32 / FLOAT64/32)");
+		puts("xmm_type    |  set default type for xmm registers (xmm_type INT128/64/32/16/8 / FLOAT64/32)");
 		puts("save_state  |  save state to file (save_state file.bin)");
 		puts("load_state  |  load state from file (load_state file.bin)");
 		puts("print       |  print value of register (print xmm0 / print FLOAT64 xmm0)");
@@ -242,7 +242,10 @@ int execute_builtins(char * line) {
 
 
 help_topic_t help_topics[] = {
-	{"test", " test message"}
+	{"xmm_type", "sets default type for dump/print\ntype can be FLOAT64 / 32 or INT128 / 64 / 32 / 16 / 8"},
+	{"print", "prints register value (print rax)\ncan also take a type for xmm registers (print FLOAT64 xmm0)"},
+	{"resolve", "resolves the address of a label\n\n        > label:\n        > resolve label\n        0x0000000001000000\n"},
+	{"assemble", "assembles an instruction and prints the result as a series of bytes\n\n        > assemble fldpi\n        0xd9 0xeb\n"}
 };
 
 int topic_count = sizeof(help_topics) / sizeof(help_topics[0]);
