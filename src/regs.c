@@ -27,27 +27,58 @@ void print_uppercase(char * string) {
 }
 
 void print_xmm(void * p, int as) {
-	xmm_float64_t * float64 = p;
-	xmm_float32_t * float32 = p;
-	xmm_int128_t * _int128 = p;
-	xmm_int32_t * _int32 = p;
+	double * float64 = p;
+	float * float32 = p;
+	uint64_t * int64 = p;
+	uint32_t * int32 = p;
+	uint16_t * int16 = p;
+	uint8_t * int8 = p;
 
 	switch (as) {
 		case FLOAT64:
-			printf("%lf %lf", float64->a, float64->b);
+			printf("%lf %lf", float64[0], float64[1]);
 			return;
 		case FLOAT32:
-			printf("%f %f %f %f", float32->a, float32->b, float32->c, float32->d);
+			printf("%f %f %f %f", float32[0], float32[1], float32[2], float32[3]);
 			return;
 		case INT128:
-			printf("0x%.16lx%.16lx", _int128->b, _int128->a);
+			printf("0x%.16lx%.16lx", int64[1], int64[0]);
 			return;
 		case INT64:
-			printf("0x%.16lx 0x%.16lx", _int128->a, _int128->b);
+			printf("0x%.16lx 0x%.16lx", int64[1], int64[0]);
 			return;
 		case INT32:
-			printf("0x%.8lx 0x%.8lx 0x%.8lx 0x%.8lx", _int32->a, _int32->b, _int32->c, _int32->d);
+			printf("0x%.8lx 0x%.8lx 0x%.8lx 0x%.8lx", int32[0], int32[1], int32[2], int32[3]);
 			return;
+		case INT16:
+			printf("0x%.4lx 0x%.4lx 0x%.4lx 0x%.4lx ", int16[0], int16[1], int16[2], int16[3]);
+			printf("0x%.4lx 0x%.4lx 0x%.4lx 0x%.4lx", int16[4], int16[5], int16[6], int16[7]);
+			return;
+		case INT8:
+			printf("0x%.2lx 0x%.2lx 0x%.2lx 0x%.2lx ", int8[0], int8[1], int8[2], int8[3]);
+			printf("0x%.2lx 0x%.2lx 0x%.2lx 0x%.2lx ", int8[4], int8[5], int8[6], int8[7]);
+			printf("0x%.2lx 0x%.2lx 0x%.2lx 0x%.2lx ", int8[8], int8[9], int8[10], int8[11]);
+			printf("0x%.2lx 0x%.2lx 0x%.2lx 0x%.2lx", int8[12], int8[13], int8[14], int8[15]);
+			return;
+	}
+}
+
+int xmm_per_line(int as) {
+	switch (as) {
+		case FLOAT64:
+			return 4;
+		case FLOAT32:
+			return 2;
+		case INT128:
+			return 2;
+		case INT64:
+			return 2;
+		case INT32:
+			return 2;
+		case INT16:
+			return 2;
+		case INT8:
+			return 1;
 	}
 }
 
@@ -71,14 +102,14 @@ void dump_registers() { // dont care about this either
 	putchar('\n');
 	printed = 1;
 	while (printed <= 16) {
-		int perline = (xmm_type == FLOAT64) ? 4 : 2;
+		int perline = xmm_per_line(xmm_type);
 		for (int i = 0; i < perline; i++) {
 			char * name = xmmregnames[printed];
 			if (printed > 16) {
 				break;
 			}
 			char c = (strlen(name) < 5) ? ' ' : 0;
-			xmm_float64_t * f = lookup_xmmregister(name);
+			xmm_float_t * f = lookup_xmmregister(name);
 			print_uppercase(name);
 			putchar(c);
 			putchar('=');
@@ -136,8 +167,8 @@ fpu_float_t * lookup_fpuregister(char * name) {
 	return &registers[index];
 }
 
-xmm_float64_t * lookup_xmmregister(char * name) {
-	xmm_float64_t * registers = &fpu_save.xmm0;
+xmm_float_t * lookup_xmmregister(char * name) {
+	xmm_float_t * registers = &fpu_save.xmm0;
 	int index = lookup_index(xmmregnames, xmmreg_count, name);
 	if (index == 0) {
 		return NULL;

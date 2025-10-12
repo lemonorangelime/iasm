@@ -7,22 +7,30 @@
 #include <fcntl.h>
 #include <helpers.h>
 #include <signals.h>
+#include <builtins.h>
 #include <stdio.h>
 #include <regs.h>
 #include <asm.h>
 #include <main.h>
 
+help_topic_t help_topics[];
+int topic_count;
+
 int decode_type(char * type) {
-	if (strcasecmp(type, "float64") == 0) {
+	if (strcasecmp(type, "float64") == 0) { // float
 		return FLOAT64;
 	} else if (strcasecmp(type, "float32") == 0) {
 		return FLOAT32;
-	} else if (strcasecmp(type, "int128") == 0) {
+	} else if (strcasecmp(type, "int128") == 0) { // int
 		return INT128;
 	} else if (strcasecmp(type, "int64") == 0) {
 		return INT64;
 	} else if (strcasecmp(type, "int32") == 0) {
 		return INT32;
+	} else if (strcasecmp(type, "int16") == 0) {
+		return INT16;
+	} else if (strcasecmp(type, "int8") == 0) {
+		return INT8;
 	}
 }
 
@@ -118,6 +126,57 @@ int print_function(char * regname, char * type) {
 	return !(errors == 3);
 }
 
+int assemble_function(char * instruction) {
+	void * buffer = NULL;
+	ssize_t size = 0;
+	int stat = assemble(instruction, &buffer, &size);
+	asm_rewind();
+	if ((stat != 0) || (size <= 0)) {
+		puts("assembler error");
+		return 1;
+	}
+	uint8_t * u8buffer = buffer;
+	while (size--) {
+		printf("0x%.2x%c", *u8buffer++, (size == 0) ? '\0' : ' ');
+	}
+	putchar('\n');
+	return 1;
+}
+
+int resolve_function(char * label) {
+	char statement[255];
+	void * buffer = NULL;
+	ssize_t size = 0;
+	int stat = sprintf(statement, "dq %s", label);
+	if (stat <= 0) {
+		puts("error");
+		return 1;
+	}
+	stat = assemble(statement, &buffer, &size);
+	asm_rewind();
+	if ((stat != 0) || (size != 8)) {
+		puts("assembler error");
+		return 1;
+	}
+	uint64_t * p = buffer;
+	printf("%.16llx\n", *p);
+	return 1;
+}
+
+void print_topic(char * topic_name) {
+	help_topic_t * topic = help_topics;
+	int i = 0;
+	for (; i < topic_count; i++, topic++) {
+		if (strcmp(topic->name, topic_name)) {
+			break;
+		}
+	}
+	if (i == topic_count) {
+		return;
+	}
+	puts(topic->message);
+}
+
 int execute_builtins(char * line) {
 	char buffer[255] = {0};
 	char buffer2[255] = {0};
@@ -136,15 +195,21 @@ int execute_builtins(char * line) {
 		paused = 0;
 		return 1;
 	}
-	if (strcmp(line, "help") == 0) {
-		puts("exit        |  exit program");
-		puts("dump        |  print all registers");
+	if (strlen(line) >= 4 && memcmp(line, "help", 4) == 0) {
+		if (line[4] == ' ' && line[5] != 0) {
+			print_topic(line + 5);
+			return 1;
+		}
 		puts("freeze      |  pause execution");
 		puts("unfreeze    |  unpause execution");
-		puts("xmm_type    |  set default type for xmm registers (INT128/64/32 / FLOAT64/32)");
-		puts("save_state  |  save state to file (filename)");
-		puts("load_state  |  load state from file (filename)");
-		puts("print       |  print value of register (register)");
+		puts("assemble    |  assemble instruction (assemble addsd xmm0, xmm1)");
+		puts("resolve     |  resolve address (resolve LABEL)");
+		puts("xmm_type    |  set default type for xmm registers (xmm_type INT128/64/32 / FLOAT64/32)");
+		puts("save_state  |  save state to file (save_state file.bin)");
+		puts("load_state  |  load state from file (load_state file.bin)");
+		puts("print       |  print value of register (print xmm0 / print FLOAT64 xmm0)");
+		puts("dump        |  print all registers");
+		puts("exit        |  exit program");
 		return 1;
 	}
 	if (sscanf(line, "xmm_type %s", buffer) > 0) {
@@ -157,11 +222,27 @@ int execute_builtins(char * line) {
 	if (sscanf(line, "load_state %s", buffer) > 0) {
 		return load_state(buffer);
 	}
+	if (strlen(line) > 9 && memcmp(line, "assemble ", 9) == 0) {
+		return assemble_function(line + 9);
+	}
+	if (strlen(line) > 8 && memcmp(line, "resolve ", 8) == 0) {
+		return resolve_function(line + 8);
+	}
 	if (sscanf(line, "print %s%s", buffer, buffer2) > 0) {
-		int swap = *buffer;
-		char * name = swap ? buffer : buffer2;
-		char * type = swap ? buffer2 : buffer;
+		int swap = *buffer2;
+		char * name = swap ? buffer2 : buffer;
+		char * type = swap ? buffer : buffer2;
 		return print_function(name, type);
 	}
 	return 0;
 }
+
+
+// topics
+
+
+help_topic_t help_topics[] = {
+	{"test", " test message"}
+};
+
+int topic_count = sizeof(help_topics) / sizeof(help_topics[0]);

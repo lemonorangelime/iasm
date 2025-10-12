@@ -13,26 +13,7 @@ typedef struct {
 typedef struct {
 	double a;
 	double b;
-} __attribute__((packed)) xmm_float64_t;
-
-typedef struct {
-	float a;
-	float b;
-	float c;
-	float d;
-} __attribute__((packed)) xmm_float32_t;
-
-typedef struct {
-	uint64_t a;
-	uint64_t b;
-} __attribute__((packed)) xmm_int128_t;
-
-typedef struct {
-	uint32_t a;
-	uint32_t b;
-	uint32_t c;
-	uint32_t d;
-} __attribute__((packed)) xmm_int32_t;
+} __attribute__((packed)) xmm_float_t;
 
 typedef struct {
 	uint64_t rax;
@@ -71,39 +52,39 @@ typedef struct {
 	fpu_float_t st5;
 	fpu_float_t st6;
 	fpu_float_t st7;
-	xmm_float64_t xmm0;
-	xmm_float64_t xmm1;
-	xmm_float64_t xmm2;
-	xmm_float64_t xmm3;
-	xmm_float64_t xmm4;
-	xmm_float64_t xmm5;
-	xmm_float64_t xmm6;
-	xmm_float64_t xmm7;
-	xmm_float64_t xmm8;
-	xmm_float64_t xmm9;
-	xmm_float64_t xmm10;
-	xmm_float64_t xmm11;
-	xmm_float64_t xmm12;
-	xmm_float64_t xmm13;
-	xmm_float64_t xmm14;
-	xmm_float64_t xmm15;
-	xmm_float64_t reserved[10];
-	xmm_float64_t ymm0_high;
-	xmm_float64_t ymm1_high;
-	xmm_float64_t ymm2_high;
-	xmm_float64_t ymm3_high;
-	xmm_float64_t ymm4_high;
-	xmm_float64_t ymm5_high;
-	xmm_float64_t ymm6_high;
-	xmm_float64_t ymm7_high;
-	xmm_float64_t ymm8_high;
-	xmm_float64_t ymm9_high;
-	xmm_float64_t ymm10_high;
-	xmm_float64_t ymm11_high;
-	xmm_float64_t ymm12_high;
-	xmm_float64_t ymm13_high;
-	xmm_float64_t ymm14_high;
-	xmm_float64_t ymm15_high;
+	xmm_float_t xmm0;
+	xmm_float_t xmm1;
+	xmm_float_t xmm2;
+	xmm_float_t xmm3;
+	xmm_float_t xmm4;
+	xmm_float_t xmm5;
+	xmm_float_t xmm6;
+	xmm_float_t xmm7;
+	xmm_float_t xmm8;
+	xmm_float_t xmm9;
+	xmm_float_t xmm10;
+	xmm_float_t xmm11;
+	xmm_float_t xmm12;
+	xmm_float_t xmm13;
+	xmm_float_t xmm14;
+	xmm_float_t xmm15;
+	xmm_float_t reserved[10];
+	xmm_float_t ymm0_high;
+	xmm_float_t ymm1_high;
+	xmm_float_t ymm2_high;
+	xmm_float_t ymm3_high;
+	xmm_float_t ymm4_high;
+	xmm_float_t ymm5_high;
+	xmm_float_t ymm6_high;
+	xmm_float_t ymm7_high;
+	xmm_float_t ymm8_high;
+	xmm_float_t ymm9_high;
+	xmm_float_t ymm10_high;
+	xmm_float_t ymm11_high;
+	xmm_float_t ymm12_high;
+	xmm_float_t ymm13_high;
+	xmm_float_t ymm14_high;
+	xmm_float_t ymm15_high;
 	char padding[192];
 } __attribute__((packed)) fpu_registers_t;
 
@@ -119,7 +100,9 @@ enum {
 	FLOAT32,
 	INT128,
 	INT64,
-	INT32
+	INT32,
+	INT16,
+	INT8
 };
 
 void print_xmm(void * p, int as);
@@ -128,4 +111,4 @@ uint64_t * lookup_register(char * name);
 uint64_t lookup_register_mask(char * name);
 char * lookup_register_specifier(char * name);
 fpu_float_t * lookup_fpuregister(char * name);
-xmm_float64_t * lookup_xmmregister(char * name);
+xmm_float_t * lookup_xmmregister(char * name);
