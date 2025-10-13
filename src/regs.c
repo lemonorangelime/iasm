@@ -84,7 +84,6 @@ int xmm_per_line(int as) {
 
 void dump_registers() { // dont care about this either
 	uint64_t * p = (uint64_t *) &register_save;
-	uint64_t * rp = (uint64_t *) &rregister_save;
 	int printed = 1;
 	while (printed < reg_count) {
 		for (int i = 0; i < 4; i++) {

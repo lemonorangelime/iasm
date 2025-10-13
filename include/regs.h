@@ -91,7 +91,6 @@ typedef struct {
 extern char * regnames[];
 extern char * fpuregnames[];
 extern registers_t register_save;
-extern registers_t rregister_save;
 extern fpu_registers_t fpu_save;
 extern int xmm_type;
 

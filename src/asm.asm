@@ -14,9 +14,10 @@ extern asm_continue
 section .bss
 
 align 16
-empty_stack: resb 0x800
+empty_stack: resb 0x1000
 fpu_save: resb 4096
 caller_fpu_save: resb 4096
+fpu_temp: resq 1
 align 4
 
 section .data
@@ -26,7 +27,7 @@ rax_save: dq 0
 rbx_save: dq 0
 rcx_save: dq 0
 rdx_save: dq 0
-rsp_save: dq empty_stack + 0x800
+rsp_save: dq empty_stack + 0x1000
 rbp_save: dq 0
 rsi_save: dq 0
 rdi_save: dq 0
@@ -61,10 +62,6 @@ caller_rflags_save: dq 0
 
 return_point: dq 0
 context_switching: dd 0
-
-align 16
-fpu_temp: dq 0.0
-align 4
 
 section .text
 

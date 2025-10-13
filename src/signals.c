@@ -46,6 +46,13 @@ char * messages[] = {
 
 int sigint = 0;
 
+void safe_puts(char * string) {
+	if (!string) {
+		return;
+	}
+	puts(string);
+}
+
 void signal_handler(int signum, siginfo_t * info, ucontext_t * context) {
 	signal(signum, (void *) signal_handler);
 
@@ -55,7 +62,7 @@ void signal_handler(int signum, siginfo_t * info, ucontext_t * context) {
 	}
 
 	char * message = messages[signum - 1];
-	printf(message ? "%s\n" : "", message);
+	safe_puts(message);
 	if (context_switching && message) {
 		context->uc_mcontext.gregs[REG_RIP] = (uint64_t) reload_state; // return to reload_state
 		return;
