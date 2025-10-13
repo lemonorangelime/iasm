@@ -1,3 +1,5 @@
+// todo: break this up a bit more
+
 #include <sys/sendfile.h>
 #include <string.h>
 #include <stdlib.h>
@@ -6,13 +8,13 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <helpers.h>
-#include <signals.h>
+#include <ctype.h>
 #include <builtins.h>
 #include <stdio.h>
-#include <regs.h>
 #include <asm.h>
 #include <main.h>
 #include <version.h>
+#include <examiner.h>
 
 help_topic_t help_topics[];
 int topic_count;
@@ -145,22 +147,11 @@ int assemble_function(char * instruction) {
 }
 
 int resolve_function(char * label) {
-	char statement[255];
-	void * buffer = NULL;
-	ssize_t size = 0;
-	int stat = sprintf(statement, "dq %s", label);
-	if (stat <= 0) {
-		puts("error");
+	uint64_t address = 0;
+	if (resolve_label(label, &address)) {
 		return 1;
 	}
-	stat = assemble(statement, &buffer, &size);
-	asm_rewind();
-	if ((stat != 0) || (size != 8)) {
-		puts("assembler error");
-		return 1;
-	}
-	uint64_t * p = buffer;
-	printf("0x%.16llx\n", *p);
+	printf("0x%.16llx\n", address);
 	return 1;
 }
 
@@ -213,6 +204,7 @@ int execute_builtins(char * line) {
 		puts("save_state  |  save state to file (save_state file.bin)");
 		puts("load_state  |  load state from file (load_state file.bin)");
 		puts("print       |  print value of register (print xmm0 / print FLOAT64 xmm0)");
+		puts("x           |  examine memory (x/10xq 0x1234)");
 		puts("dump        |  print all registers");
 		puts("exit        |  exit program");
 		return 1;
@@ -239,7 +231,7 @@ int execute_builtins(char * line) {
 		char * type = swap ? buffer : buffer2;
 		return print_function(name, type);
 	}
-	return 0;
+	return examine(line);
 }
 
 
@@ -247,10 +239,11 @@ int execute_builtins(char * line) {
 
 
 help_topic_t help_topics[] = {
-	{"xmm_type", "sets default type for dump/print\ntype can be FLOAT64 / 32 or INT128 / 64 / 32 / 16 / 8"},
-	{"print", "prints register value (print rax)\ncan also take a type for xmm registers (print FLOAT64 xmm0)"},
-	{"resolve", "resolves the address of a label\n\n        > label:\n        > resolve label\n        0x0000000001000000\n"},
-	{"assemble", "assembles an instruction and prints the result as a series of bytes\n\n        > assemble fldpi\n        0xd9 0xeb\n"}
+	{"xmm_type",	"sets default type for dump/print\ntype can be FLOAT64 / 32 or INT128 / 64 / 32 / 16 / 8"},
+	{"print",	"prints register value (print rax)\ncan also take a type for xmm registers (print FLOAT64 xmm0)"},
+	{"resolve",	"resolves the address of a label\n\n        > label:\n        > resolve label\n        0x0000000001000000\n"},
+	{"assemble",	"assembles an instruction and prints the result as a series of bytes\n\n        > assemble fldpi\n        0xd9 0xeb\n"},
+	{"x",		"examines memory (x/[count][type][size])\n\ncount: number of units to print\ntype: unit type (x = hexadecimal, d = signed digit, u = unsigned digit, o = octal, c = character, b = binary)\nsize: unit size (b = byte, w = word, d = dword, q = qword)\n\n        > ~example: dd 0x12345678\n        > x/1xd example\n        0x12345678\n        > x/4x example\n        0x78 0x56 0x34 0x12\n"}
 };
 
 int topic_count = sizeof(help_topics) / sizeof(help_topics[0]);
