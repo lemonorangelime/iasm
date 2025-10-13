@@ -7,7 +7,7 @@ BUILD_DIR := build
 CC := gcc
 ASM := nasm
 ASMFLAGS := -f elf64 -I include/
-CCFLAGS := -Ofast -ftree-vectorize -fomit-frame-pointer -m64 -mhard-float -fno-stack-protector -Iinclude -Wno-address-of-packed-member -z noexecstack
+CCFLAGS := -flto -s -Oz -funroll-all-loops -ftree-vectorize -fomit-frame-pointer -m64 -mhard-float -fno-stack-protector -Iinclude -Wno-address-of-packed-member -z noexecstack -z noseparate-code
 LD := ld
 LDFLAGS := --strip-all --discard-all --discard-locals --strip-debug
 
@@ -41,7 +41,14 @@ $(BUILD_DIR)/%.asm.o: src/%.asm
 
 $(OUTPUT): $(OBJS) $(ASM_OBJS)
 	$(CC) $(CCFLAGS) $^ -o $@
-	strip --strip-unneeded $@
+	objcopy --remove-section .note $@
+	objcopy --remove-section .note.gnu.property $@
+	objcopy --remove-section .note.ABI-tag $@
+	objcopy --remove-section .hash $@
+	objcopy --remove-section .gnu.hash $@
+	objcopy --remove-section .gnu.version $@
+	objcopy --remove-section .comment $@
+	strip --strip-unneeded --strip-debug --strip-section-headers $@
 
 # "iasm" seems to be a pretty common name
 install: $(OUTPUT)
