@@ -12,6 +12,7 @@
 #include <regs.h>
 #include <asm.h>
 #include <main.h>
+#include <version.h>
 
 help_topic_t help_topics[];
 int topic_count;
@@ -182,6 +183,10 @@ int execute_builtins(char * line) {
 	char buffer2[255] = {0};
 	if (strcmp(line, "exit") == 0) {
 		return 2;
+	}
+	if (strcmp(line, "ver") == 0 || strcmp(line, "version") == 0) {
+		printf("%d.%d\n", major_version, minor_version);
+		return 1;
 	}
 	if (strcmp(line, "dump") == 0) {
 		dump_registers();
