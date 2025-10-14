@@ -205,7 +205,7 @@ int execute_builtins(char * line) {
 		return 2;
 	}
 	if (strcmp(line, "ver") == 0 || strcmp(line, "version") == 0) {
-		printf("%d.%d\n", major_version, minor_version);
+		printf("%d.%d.%d\n", major_version, minor_version, patch_version);
 		return 1;
 	}
 	if (strcmp(line, "dump") == 0) {

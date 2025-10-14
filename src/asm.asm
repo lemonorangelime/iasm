@@ -71,7 +71,7 @@ section .text
 save_caller_fpu_state:
 	mov rax, 0xffffffff
 	mov rdx, 0xffffffff
-	cmp DWORD [xsave_supported], 0
+	cmp DWORD [rel xsave_supported], 0
 	je .fxsave
 	xsave [rel caller_fpu_save]
 	ret
@@ -80,7 +80,7 @@ save_caller_fpu_state:
 	ret
 
 restore_caller_fpu_state:
-	cmp DWORD [xsave_supported], 0
+	cmp DWORD [rel xsave_supported], 0
 	je .fxrstor
 	xrstor [rel caller_fpu_save]
 	ret
@@ -91,7 +91,7 @@ restore_caller_fpu_state:
 save_fpu_state:
 	mov rax, 0xffffffff
 	mov rdx, 0xffffffff
-	cmp DWORD [xsave_supported], 0
+	cmp DWORD [rel xsave_supported], 0
 	je .fxsave
 	xsave [rel fpu_save]
 	ret
@@ -100,7 +100,7 @@ save_fpu_state:
 	ret
 
 restore_fpu_state:
-	cmp DWORD [xsave_supported], 0
+	cmp DWORD [rel xsave_supported], 0
 	je .fxrstor
 	xrstor [rel fpu_save]
 	ret
@@ -222,13 +222,13 @@ setup_fpu:
 	push rcx
 	push rdx
 
-	mov DWORD [fxsave_supported], 1 ; YES
+	mov DWORD [rel fxsave_supported], 1 ; YES
 
 	mov eax, 0x01
 	cpuid
 	test ecx, 1 << 28
 	jz .no_avx
-	mov DWORD [xsave_supported], 1 ; YES
+	mov DWORD [rel xsave_supported], 1 ; YES
 .no_avx:
 	call save_caller_fpu_state
 	finit
