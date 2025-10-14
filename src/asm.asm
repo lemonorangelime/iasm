@@ -63,7 +63,50 @@ caller_rflags_save: dq 0
 return_point: dq 0
 context_switching: dd 0
 
+xsave_supported: dd 0
+fxsave_supported: dd 0
+
 section .text
+
+save_caller_fpu_state:
+	mov rax, 0xffffffff
+	mov rdx, 0xffffffff
+	cmp DWORD [xsave_supported], 0
+	je .fxsave
+	xsave [rel caller_fpu_save]
+	ret
+.fxsave:
+	fxsave [rel caller_fpu_save]
+	ret
+
+restore_caller_fpu_state:
+	cmp DWORD [xsave_supported], 0
+	je .fxrstor
+	xrstor [rel caller_fpu_save]
+	ret
+.fxrstor:
+	fxrstor [rel caller_fpu_save]
+	ret
+
+save_fpu_state:
+	mov rax, 0xffffffff
+	mov rdx, 0xffffffff
+	cmp DWORD [xsave_supported], 0
+	je .fxsave
+	xsave [rel fpu_save]
+	ret
+.fxsave:
+	fxsave [rel fpu_save]
+	ret
+
+restore_fpu_state:
+	cmp DWORD [xsave_supported], 0
+	je .fxrstor
+	xrstor [rel fpu_save]
+	ret
+.fxrstor:
+	fxrstor [rel fpu_save]
+	ret
 
 ; close your eyes
 asm_resume:
@@ -89,11 +132,9 @@ asm_resume:
 	pop rax
 	mov QWORD [rel caller_rflags_save], rax
 
-	mov rax, 0xffffffff
-	mov rdx, 0xffffffff
-	xsave [rel caller_fpu_save]
+	call save_caller_fpu_state
 
-	xrstor [rel fpu_save]
+	call restore_fpu_state
 	mov rax, [rel rflags_save]
 	push rax
 	popfq
@@ -141,16 +182,14 @@ asm_continue:
 	pop rax
 	mov QWORD [rel rflags_save], rax
 
-	mov rax, 0xffffffff
-	mov rdx, 0xffffffff
-	xsave [rel fpu_save]
+	call save_fpu_state
 
 reload_state:
 	mov rax, [rel caller_rflags_save]
 	push rax
 	popfq
 
-	xrstor [rel caller_fpu_save]
+	call restore_caller_fpu_state
 
 	mov rax, [rel caller_rax_save]
 	mov rbx, [rel caller_rbx_save]
@@ -179,10 +218,19 @@ fpu_float_to_double:
 
 setup_fpu:
 	push rax
+	push rbx
+	push rcx
 	push rdx
-	mov rax, 0xffffffff
-	mov rdx, 0xffffffff
-	xsave [rel caller_fpu_save]
+
+	mov DWORD [fxsave_supported], 1 ; YES
+
+	mov eax, 0x01
+	cpuid
+	test ecx, 1 << 28
+	jz .no_avx
+	mov DWORD [xsave_supported], 1 ; YES
+.no_avx:
+	call save_caller_fpu_state
 	finit
 	vxorpd xmm0, xmm0
 	pxor xmm1, xmm1
@@ -200,10 +248,10 @@ setup_fpu:
 	pxor xmm13, xmm13
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
-	mov rax, 0xffffffff
-	mov rdx, 0xffffffff
-	xsave [rel fpu_save]
-	xrstor [rel caller_fpu_save]
+	call save_fpu_state
+	call restore_caller_fpu_state
 	pop rdx
+	pop rcx
+	pop rbx
 	pop rax
 	ret
