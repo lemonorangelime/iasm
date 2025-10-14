@@ -7,7 +7,7 @@ BUILD_DIR := build
 CC := gcc
 ASM := nasm
 ASMFLAGS := -f elf64 -I include/
-CCFLAGS := -flto -s -Oz -funroll-all-loops -ftree-vectorize -fomit-frame-pointer -m64 -mhard-float -fno-stack-protector -Iinclude -Wno-address-of-packed-member -z noexecstack -z noseparate-code
+CCFLAGS := -flto -s -Oz -funroll-all-loops -ftree-vectorize -fomit-frame-pointer -m64 -mhard-float -fno-stack-protector -Iinclude -Wno-address-of-packed-member -z noexecstack -z noseparate-code -lm
 LD := ld
 LDFLAGS := --strip-all --discard-all --discard-locals --strip-debug
 

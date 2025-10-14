@@ -24,7 +24,9 @@ int decode_type(char * type) {
 		return FLOAT64;
 	} else if (strcasecmp(type, "float32") == 0) {
 		return FLOAT32;
-	} else if (strcasecmp(type, "int128") == 0) { // int
+	} else if (strcasecmp(type, "int256") == 0) { // int
+		return INT256;
+	} else if (strcasecmp(type, "int128") == 0) {
 		return INT128;
 	} else if (strcasecmp(type, "int64") == 0) {
 		return INT64;
@@ -35,6 +37,20 @@ int decode_type(char * type) {
 	} else if (strcasecmp(type, "int8") == 0) {
 		return INT8;
 	}
+	return INT8;
+}
+
+int decode_print_flag(char * type) {
+	if (strcasecmp(type, "general") == 0) {
+		return PRINT_GENERAL;
+	} else if (strcasecmp(type, "xmm") == 0) {
+		return PRINT_XMM;
+	} else if (strcasecmp(type, "ymm") == 0) {
+		return PRINT_YMM;
+	} else if (strcasecmp(type, "fpu") == 0) {
+		return PRINT_FPU;
+	}
+	return -1;
 }
 
 int save_state(char * filename) {
@@ -56,6 +72,7 @@ int save_state(char * filename) {
 	write(fd, &register_save, sizeof(registers_t));
 	write(fd, &return_point, 8);
 	write(fd, &fpu_save, 1024); // 
+	write(fd, stack_buffer, 4096);
 	write(fd, exec_buffer, 4096);
 	sendfile(fd, asmfd, NULL, asmsize);
 	close(fd);
@@ -82,6 +99,7 @@ int load_state(char * filename) {
 	read(fd, &register_save, sizeof(registers_t));
 	read(fd, &return_point, 8);
 	read(fd, &fpu_save, 1024);
+	read(fd, stack_buffer, 4096);
 	read(fd, exec_buffer, 4096);
 	sendfile(asmfd, fd, NULL, asmsize);
 	close(fd);
@@ -121,12 +139,23 @@ int print_xmm_register(char * regname, char * type) {
 	return 0;
 }
 
+int print_ymm_register(char * regname, char * type) {
+	void * yp = lookup_ymmregister(regname);
+	if (!yp) {
+		return 1;
+	}
+	print_ymm(yp, *type ? decode_type(type) : ymm_type);
+	putchar('\n');
+	return 0;
+}
+
 int print_function(char * regname, char * type) {
 	int errors = 0;
 	errors += print_register(regname, type);
 	errors += print_fpu_register(regname, type);
 	errors += print_xmm_register(regname, type);
-	return !(errors == 3);
+	errors += print_ymm_register(regname, type);
+	return !(errors == 4);
 }
 
 int assemble_function(char * instruction) {
@@ -196,21 +225,44 @@ int execute_builtins(char * line) {
 			print_topic(line + 5);
 			return 1;
 		}
-		puts("freeze      |  pause execution");
-		puts("unfreeze    |  unpause execution");
-		puts("assemble    |  assemble instruction (assemble addsd xmm0, xmm1)");
-		puts("resolve     |  resolve address (resolve LABEL)");
-		puts("xmm_type    |  set default type for xmm registers (xmm_type INT128/64/32/16/8 / FLOAT64/32)");
-		puts("save_state  |  save state to file (save_state file.bin)");
-		puts("load_state  |  load state from file (load_state file.bin)");
-		puts("print       |  print value of register (print xmm0 / print FLOAT64 xmm0)");
-		puts("x           |  examine memory (x/10xq 0x1234)");
-		puts("dump        |  print all registers");
-		puts("exit        |  exit program");
+		puts("freeze        |  pause execution");
+		puts("unfreeze      |  unpause execution");
+		puts("assemble      |  assemble instruction (assemble addsd xmm0, xmm1)");
+		puts("resolve       |  resolve address (resolve LABEL)");
+		puts("xmm_type      |  set default type for xmm registers (xmm_type INT256/128/64/32/16/8 / FLOAT64/32)");
+		puts("ymm_type      |  set default type for ymm registers (ymm_type INT256/128/64/32/16/8 / FLOAT64/32)");
+		puts("dump_enable   |  enable function of `dump` command (general, xmm, ymm, fpu)");
+		puts("dump_disable  |  disable function of `dump` command (general, xmm, ymm, fpu)");
+		puts("save_state    |  save state to file (save_state file.bin)");
+		puts("load_state    |  load state from file (load_state file.bin)");
+		puts("print         |  print value of register (print xmm0 / print FLOAT64 xmm0)");
+		puts("x             |  examine memory (x/10xq 0x1234)");
+		puts("dump          |  print all registers");
+		puts("exit          |  exit program");
 		return 1;
 	}
 	if (sscanf(line, "xmm_type %s", buffer) > 0) {
 		xmm_type = decode_type(buffer);
+		return 1;
+	}
+	if (sscanf(line, "ymm_type %s", buffer) > 0) {
+		ymm_type = decode_type(buffer);
+		return 1;
+	}
+	if (sscanf(line, "dump_enable %s", buffer) > 0) {
+		int flag = decode_print_flag(buffer);
+		if (flag == -1) {
+			return 0;
+		}
+		print_flags |= flag;
+		return 1;
+	}
+	if (sscanf(line, "dump_disable %s", buffer) > 0) {
+		int flag = decode_print_flag(buffer);
+		if (flag == -1) {
+			return 0;
+		}
+		print_flags |= flag;
 		return 1;
 	}
 	if (sscanf(line, "save_state %s", buffer) > 0) {
@@ -239,11 +291,12 @@ int execute_builtins(char * line) {
 
 
 help_topic_t help_topics[] = {
-	{"xmm_type",	"sets default type for dump/print\ntype can be FLOAT64 / 32 or INT128 / 64 / 32 / 16 / 8"},
+	{"xmm_type",	"sets default dump/print type for xmm registers\ntype can be FLOAT64 / 32 or INT256 / 128 / 64 / 32 / 16 / 8"},
+	{"ymm_type",	"sets default dump/print type for ymm registers\ntype can be FLOAT64 / 32 or INT256 / 128 / 64 / 32 / 16 / 8"},
 	{"print",	"prints register value (print rax)\ncan also take a type for xmm registers (print FLOAT64 xmm0)"},
 	{"resolve",	"resolves the address of a label\n\n        > label:\n        > resolve label\n        0x0000000001000000\n"},
 	{"assemble",	"assembles an instruction and prints the result as a series of bytes\n\n        > assemble fldpi\n        0xd9 0xeb\n"},
-	{"x",		"examines memory (x/[count][type][size])\n\ncount: number of units to print\ntype: unit type (x = hexadecimal, d = signed digit, u = unsigned digit, o = octal, c = character, b = binary)\nsize: unit size (b = byte, w = word, d = dword, q = qword)\n\n        > ~example: dd 0x12345678\n        > x/1xd example\n        0x12345678\n        > x/4x example\n        0x78 0x56 0x34 0x12\n"}
+	{"x",		"examines memory (x/[count][type][size])\n\ncount: number of units to print\ntype: unit type (x = hexadecimal, d = signed digit, u = unsigned digit, o = octal, c = character, b = binary, f = float)\nsize: unit size (b = byte, w = word, d = dword, q = qword)\n\n        > ~example: dd 0x12345678\n        > x/1xd example\n        0x12345678\n        > x/4x example\n        0x78 0x56 0x34 0x12\n"}
 };
 
 int topic_count = sizeof(help_topics) / sizeof(help_topics[0]);

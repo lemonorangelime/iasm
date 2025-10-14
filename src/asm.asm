@@ -13,12 +13,12 @@ extern asm_continue
 
 section .bss
 
-align 16
-empty_stack: resb 0x1000
+align 32
 fpu_save: resb 4096
+align 32
 caller_fpu_save: resb 4096
+align 16
 fpu_temp: resq 1
-align 4
 
 section .data
 
@@ -27,7 +27,7 @@ rax_save: dq 0
 rbx_save: dq 0
 rcx_save: dq 0
 rdx_save: dq 0
-rsp_save: dq empty_stack + 0x1000
+rsp_save: dq 0
 rbp_save: dq 0
 rsi_save: dq 0
 rdi_save: dq 0
@@ -89,11 +89,11 @@ asm_resume:
 	pop rax
 	mov QWORD [rel caller_rflags_save], rax
 
-	xor rax, rax
-	xor rdx, rdx
-	fxsave [rel caller_fpu_save]
+	mov rax, 0xffffffff
+	mov rdx, 0xffffffff
+	xsave [rel caller_fpu_save]
 
-	fxrstor [rel fpu_save]
+	xrstor [rel fpu_save]
 	mov rax, [rel rflags_save]
 	push rax
 	popfq
@@ -141,16 +141,16 @@ asm_continue:
 	pop rax
 	mov QWORD [rel rflags_save], rax
 
-	xor rax, rax
-	xor rdx, rdx
-	fxsave [rel fpu_save]
+	mov rax, 0xffffffff
+	mov rdx, 0xffffffff
+	xsave [rel fpu_save]
 
 reload_state:
 	mov rax, [rel caller_rflags_save]
 	push rax
 	popfq
 
-	fxrstor [rel caller_fpu_save]
+	xrstor [rel caller_fpu_save]
 
 	mov rax, [rel caller_rax_save]
 	mov rbx, [rel caller_rbx_save]
@@ -178,13 +178,13 @@ fpu_float_to_double:
 	ret
 
 setup_fpu:
-	xor rax, rax
-	xor rdx, rdx
-	fxsave [rel caller_fpu_save]
+	push rax
+	push rdx
+	mov rax, 0xffffffff
+	mov rdx, 0xffffffff
+	xsave [rel caller_fpu_save]
 	finit
-	xor rax, rax
-	xor rdx, rdx
-	pxor xmm0, xmm0
+	vxorpd xmm0, xmm0
 	pxor xmm1, xmm1
 	pxor xmm2, xmm2
 	pxor xmm3, xmm3
@@ -200,6 +200,10 @@ setup_fpu:
 	pxor xmm13, xmm13
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
-	fxsave [rel fpu_save]
-	fxrstor [rel caller_fpu_save]
+	mov rax, 0xffffffff
+	mov rdx, 0xffffffff
+	xsave [rel fpu_save]
+	xrstor [rel caller_fpu_save]
+	pop rdx
+	pop rax
 	ret

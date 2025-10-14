@@ -10,8 +10,11 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <asm.h>
+#include <regs.h>
 
+// stack and ram must be fixed
 uint8_t * exec_buffer = (uint8_t *) 0x01000000;
+uint8_t * stack_buffer = (uint8_t *) 0x00800000;
 size_t exec_buffer_size = 0;
 
 int call_nasm() {
@@ -33,7 +36,18 @@ int call_nasm() {
 
 void setup_executable_buffer() {
 	exec_buffer = (uint8_t *) mmap(exec_buffer, 4096, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0); // whatever :shrug:
+	stack_buffer = (uint8_t *) mmap(stack_buffer, 4096, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0); // executable stack because yeah
 	return_point = (uint64_t) exec_buffer;
+}
+
+void setup_registers() {
+	memset(&register_save, 0, sizeof(registers_t));
+	memset(&fpu_save, 0, 1024);
+	memset(exec_buffer, 0, 4096);
+	memset(stack_buffer, 0, 4096);
+
+	return_point = (uint64_t) exec_buffer;
+	register_save.rsp = ((uint64_t) stack_buffer) + 4096;
 }
 
 uint64_t asm_execute(void * buffer, ssize_t size, int skip) {
@@ -62,6 +76,7 @@ void asm_reset() {
 	write(fd, "bits 64\norg 0x01000000\n", 23);
 	close(fd);
 
+	setup_registers();
 	setup_fpu();
 }
 

@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <floats.h>
 
 static examine_type_t examiner_types[] = {
 //	{code, {"byte",  "word",    "dword",    "qword"}}
@@ -14,7 +15,8 @@ static examine_type_t examiner_types[] = {
 	{'u', {"%u",     "%u",	    "%u",       "%llu"}},
 	{'o', {"0%.3o",  "0%.6o",   "0%.11o",   "0%.22llo"}},
 	{'c', {"'%c'",   "'%lc'",   "'%llc'",   "'%llc'"}},
-	{'b', {"0b%.8b", "0b%.16b", "0b%.32b",  "0b%.64llb"}}
+	{'b', {"0b%.8b", "0b%.16b", "0b%.32b",  "0b%.64llb"}},
+	{'f', {"%lf",	 "%lf",	    "%lf",	"%lf"}}
 };
 
 static int examiner_type_count = sizeof(examiner_types) / sizeof(examiner_types[0]);
@@ -54,7 +56,7 @@ char * examiner_type_specifier(char type, char size) {
 }
 
 int examiner_validate_size(char size) {
-	return (size != 'b') && (size != 'w') && (size != 'd') && (size == 'q');
+	return (size != 'b') && (size != 'w') && (size != 'd') && (size != 'q');
 }
 
 int examiner_validate_type(char type) {
@@ -100,6 +102,21 @@ char * examiner_parse_slash(char * line, char * type, char * size, int * count) 
 	return line + 1;
 }
 
+void print_float(void * f, char size) {
+	float8_t * f8 = f;
+	float16_t * f16 = f;
+	float32_t * f32 = f;
+	float64_t * f64 = f;
+	double d = 0.0;
+	switch (size) {
+		case 'b': d = float8_decode(f8); break;
+		case 'w': d = float16_decode(f16); break;
+		case 'd': d = float32_decode(f32); break;
+		case 'q': d = float64_decode(f64); break;
+	}
+	printf("%lf", d);
+}
+
 int examine(char * line) {
 	if ((*line != 'x') || (line[1] != '/' && line[1] != ' ')) {
 		return 0; // match failed
@@ -124,7 +141,11 @@ int examine(char * line) {
 	int i = 0;
 	while (count--) {
 		uint64_t data = examiner_read(&p, size);
-		printf(specifier, data);
+		if (type == 'f') {
+			print_float(&data, size);
+		} else {
+			printf(specifier, data);
+		}
 		putchar(count ? ' ' : 0);
 		fflush(stdout);
 		if (i++ == 8) {
