@@ -6,6 +6,7 @@
 extern uint64_t return_point;
 extern uint8_t * exec_buffer;
 extern uint8_t * stack_buffer;
+extern size_t exec_buffer_size;
 extern int context_switching;
 
 void setup_executable_buffer();

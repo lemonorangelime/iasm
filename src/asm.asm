@@ -13,9 +13,9 @@ extern asm_continue
 
 section .bss
 
-align 32
+align 64
 fpu_save: resb 4096
-align 32
+align 64
 caller_fpu_save: resb 4096
 align 16
 fpu_temp: resq 1

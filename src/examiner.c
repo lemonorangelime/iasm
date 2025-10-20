@@ -102,17 +102,13 @@ char * examiner_parse_slash(char * line, char * type, char * size, int * count) 
 	return line + 1;
 }
 
-void print_float(void * f, char size) {
-	float8_t * f8 = f;
-	float16_t * f16 = f;
-	float32_t * f32 = f;
-	float64_t * f64 = f;
+void print_float(uint64_t data, int size) {
 	double d = 0.0;
 	switch (size) {
-		case 'b': d = float8_decode(f8); break;
-		case 'w': d = float16_decode(f16); break;
-		case 'd': d = float32_decode(f32); break;
-		case 'q': d = float64_decode(f64); break;
+		case 'b': d = float8_decode(data); break;
+		case 'w': d = float16_decode(data); break;
+		case 'd': d = float32_decode(data); break;
+		case 'q': d = float64_decode(data); break;
 	}
 	printf("%lf", d);
 }
@@ -142,7 +138,7 @@ int examine(char * line) {
 	while (count--) {
 		uint64_t data = examiner_read(&p, size);
 		if (type == 'f') {
-			print_float(&data, size);
+			print_float(data, size);
 		} else {
 			printf(specifier, data);
 		}
