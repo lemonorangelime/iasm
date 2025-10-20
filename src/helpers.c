@@ -37,3 +37,19 @@ int resolve_label(char * label, uint64_t * p) {
 	*p = *(uint64_t *) buffer;
 	return 0;
 }
+
+// ONLY general registers, allowing `x/1q xmm0` would be perposterous and utterly absurd
+int resolve_register_or_label(char * name, uint64_t * p) {
+	uint64_t address = 0;
+	if (resolve_label(name, &address)) {
+		uint64_t * regp = lookup_register(name);
+		if (!regp) {
+			return 1;
+		}
+		uint64_t mask = lookup_register_mask(name);
+		*p = (*regp) & mask;
+		return 0;
+	}
+	*p = address;
+	return 0;
+}

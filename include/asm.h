@@ -19,3 +19,4 @@ void setup_fpu();
 double fpu_float_to_double(fpu_float_t * fpu_float);
 void asm_rewind();
 void asm_continue();
+void safe_memcpy(void * dest, void * src, size_t size);

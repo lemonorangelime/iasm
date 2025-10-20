@@ -75,6 +75,7 @@ int main(int argc, char * argv[]) {
 		if (handle_statement(line)) {
 			break;
 		}
+		signaled = 0;
 	}
 	return 0;
 }

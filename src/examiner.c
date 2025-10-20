@@ -7,6 +7,8 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <floats.h>
+#include <signals.h>
+#include <asm.h>
 
 static examine_type_t examiner_types[] = {
 //	{code, {"byte",  "word",    "dword",    "qword"}}
@@ -71,7 +73,7 @@ int examiner_validate_type(char type) {
 uint64_t examiner_read(void ** p, char size) {
 	uint64_t data = 0;
 	int byte_size = examiner_decode_size(size);
-	memcpy(&data, *p, byte_size);
+	safe_memcpy(&data, *p, byte_size);
 	*p += byte_size;
 	return data;
 }
@@ -102,7 +104,7 @@ char * examiner_parse_slash(char * line, char * type, char * size, int * count) 
 	return line + 1;
 }
 
-void print_float(uint64_t data, int size) {
+int print_float(uint64_t data, int size) {
 	double d = 0.0;
 	switch (size) {
 		case 'b': d = float8_decode(data); break;
@@ -110,7 +112,7 @@ void print_float(uint64_t data, int size) {
 		case 'd': d = float32_decode(data); break;
 		case 'q': d = float64_decode(data); break;
 	}
-	printf("%lf", d);
+	return printf("%lf", d);
 }
 
 int examine(char * line) {
@@ -128,26 +130,33 @@ int examine(char * line) {
 		return 0; // match failed
 	}
 
-	if (resolve_label(line, &address)) {
+	if (resolve_register_or_label(line, &address)) {
 		return 0; // match failed
 	}
 
 	char * specifier = examiner_type_specifier(type, size);
 	void * p = (void *) address;
-	int i = 0;
+	int printed = printf("0x%.16llx: ", p);
 	while (count--) {
 		uint64_t data = examiner_read(&p, size);
-		if (type == 'f') {
-			print_float(data, size);
-		} else {
-			printf(specifier, data);
+		if (signaled) { // shit
+			return 1;
 		}
+		if (type == 'f') {
+			printed += print_float(data, size);
+		} else {
+			printed += printf(specifier, data);
+		}
+		fflush(stdout);
 		putchar(count ? ' ' : 0);
 		fflush(stdout);
-		if (i++ == 8) {
+		if ((printed > 80) && count) {
+			printed = 0;
 			write(1, "\n", 1);
+			printed += printf("0x%.16llx: ", p);
+			fflush(stdout);
 		}
 	}
-	write(1, "\n", !!(i % 8));
+	write(1, "\n", !!printed);
 	return 1;
 }

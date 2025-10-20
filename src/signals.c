@@ -45,6 +45,7 @@ char * messages[] = {
 };
 
 int sigint = 0;
+int signaled = 0;
 
 void safe_puts(char * string) {
 	if (!string) {
@@ -56,6 +57,7 @@ void safe_puts(char * string) {
 void signal_handler(int signum, siginfo_t * info, ucontext_t * context) {
 	signal(signum, (void *) signal_handler);
 
+	signaled = 1;
 	sigint = signum == SIGINT;
 	if (sigint) {
 		putchar('\n');

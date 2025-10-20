@@ -10,6 +10,8 @@ extern setup_fpu
 extern fpu_float_to_double
 extern context_switching
 extern asm_continue
+extern safe_memcpy
+extern memcpy
 
 section .bss
 
@@ -209,6 +211,36 @@ reload_state:
 	mov r15, [rel caller_r15_save]
 	mov DWORD [rel context_switching], 0
 	ret
+
+safe_memcpy:
+	mov DWORD [rel context_switching], 1
+	mov QWORD [rel caller_rax_save], rax
+	mov QWORD [rel caller_rbx_save], rbx
+	mov QWORD [rel caller_rcx_save], rcx
+	mov QWORD [rel caller_rdx_save], rdx
+	mov QWORD [rel caller_rsp_save], rsp
+	mov QWORD [rel caller_rbp_save], rbp
+	mov QWORD [rel caller_rsi_save], rsi
+	mov QWORD [rel caller_rdi_save], rdi
+	mov QWORD [rel caller_r8_save], r8
+	mov QWORD [rel caller_r9_save], r9
+	mov QWORD [rel caller_r10_save], r10
+	mov QWORD [rel caller_r11_save], r11
+	mov QWORD [rel caller_r12_save], r12
+	mov QWORD [rel caller_r13_save], r13
+	mov QWORD [rel caller_r14_save], r14
+	mov QWORD [rel caller_r15_save], r15
+
+	pushfq
+	pop rax
+	mov QWORD [rel caller_rflags_save], rax
+
+	call save_caller_fpu_state
+	mov rax, QWORD [rel caller_rax_save]
+	mov rdx, QWORD [rel caller_rdx_save]
+
+	call memcpy
+	jmp reload_state
 
 fpu_float_to_double:
 	fld TWORD [rdi]
