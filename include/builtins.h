@@ -6,3 +6,4 @@ typedef struct {
 } help_topic_t;
 
 int execute_builtins(char * line);
+void setup_builtins();

@@ -11,6 +11,7 @@
 #include <regs.h>
 #include <asm.h>
 #include <builtins.h>
+#include <dynamic.h>
 
 int paused = 0;
 
@@ -68,6 +69,8 @@ int main(int argc, char * argv[]) {
 	register_handlers();
 	setup_executable_buffer();
 	asm_reset();
+	setup_builtins();
+	dynamic_load_defaults();
 	while (read_input(&line, &line_size) != -1) {
 		if (line_size == 0) {
 			continue;

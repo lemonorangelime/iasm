@@ -27,3 +27,4 @@ int examiner_decode_size(char size);
 uint64_t examiner_read(void ** p, char size);
 char * examiner_type_specifier(char type, char size);
 int examine(char * line);
+int print_float(uint64_t data, char size);

@@ -11,6 +11,7 @@
 #include <sys/wait.h>
 #include <asm.h>
 #include <regs.h>
+#include <vars.h>
 
 // stack and ram must be fixed
 uint8_t * exec_buffer = (uint8_t *) 0x01000000;
@@ -26,7 +27,7 @@ int call_nasm() {
 		close(0);
 		close(1);
 		close(2);
-		execl("/usr/bin/nasm", "nasm", "/tmp/.temp_asm.asm", "-o", "/tmp/.temp_output.bin", (char *) NULL);
+		execl("/usr/bin/nasm", "nasm", "/tmp/.temp_asm.asm", "-o", "/tmp/.temp_output.bin", NULL);
 		exit(0);
 	}
 	int stat = 0;
@@ -35,37 +36,33 @@ int call_nasm() {
 }
 
 void setup_executable_buffer() {
-	exec_buffer = (uint8_t *) mmap(exec_buffer, 4096, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0); // whatever :shrug:
-	stack_buffer = (uint8_t *) mmap(stack_buffer, 4096, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0); // executable stack because yeah
-	return_point = (uint64_t) exec_buffer;
+	exec_buffer = (uint8_t *) mmap(exec_buffer, EXEC_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0); // whatever :shrug:
+	stack_buffer = (uint8_t *) mmap(stack_buffer, STACK_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0); // executable stack because yeah
+	return_point = (uintptr_t) exec_buffer;
 }
 
 void setup_registers() {
-	memset(&register_save, 0, sizeof(registers_t));
-	memset(&fpu_save, 0, 1024);
+	//memset(&register_save, 0, sizeof(registers_t));
+	//memset(&fpu_save, 0, 1024);
 	memset(exec_buffer, 0, 4096);
-	memset(stack_buffer, 0, 4096);
+	memset(stack_buffer, 0, STACK_SIZE);
 
-	return_point = (uint64_t) exec_buffer;
-	register_save.rsp = ((uint64_t) stack_buffer) + 4096;
+	return_point = (uintptr_t) exec_buffer;
+	register_save.esp = ((uintptr_t) stack_buffer) + STACK_SIZE;
 }
 
 uint64_t asm_execute(void * buffer, ssize_t size, int skip) {
 	memcpy(exec_buffer + exec_buffer_size, buffer, size);
 
 	exec_buffer_size += size;
-	exec_buffer[exec_buffer_size + 0] = 0xff;
-	exec_buffer[exec_buffer_size + 1] = 0x25;
-	exec_buffer[exec_buffer_size + 2] = 0x00;
-	exec_buffer[exec_buffer_size + 3] = 0x00;
-	exec_buffer[exec_buffer_size + 4] = 0x00;
-	exec_buffer[exec_buffer_size + 5] = 0x00;
-	*(uint64_t *) &exec_buffer[exec_buffer_size + 6] = (uint64_t) asm_continue;
+	exec_buffer[exec_buffer_size + 0] = 0x68; // push asm_continue
+	exec_buffer[exec_buffer_size + 5] = 0xc3; // ret
+	*(uint32_t *) &exec_buffer[exec_buffer_size + 1] = (uint32_t) asm_continue;
 
 	if (!skip) {
 		asm_resume();
 	}
-	return_point = ((uint64_t) exec_buffer) + exec_buffer_size;
+	return_point = ((uintptr_t) exec_buffer) + exec_buffer_size;
 	return 0;
 }
 
@@ -73,7 +70,7 @@ void asm_reset() {
 	remove("/tmp/.temp_asm.asm");
 
 	int fd = open("/tmp/.temp_asm.asm", O_CREAT | O_RDWR, 0664);
-	write(fd, "bits 64\norg 0x01000000\n", 23);
+	write(fd, "bits 32\norg 0x01000000\n", 23);
 	close(fd);
 
 	setup_registers();
@@ -109,7 +106,7 @@ int assemble(char * instruction, void ** buffer, ssize_t * size) {
 	nasm_status = call_nasm();
 
 	fd = open("/tmp/.temp_output.bin", O_RDONLY);
-	*size = fdsize(fd) - exec_buffer_size;
+	*size = my_fdsize(fd) - exec_buffer_size;
 	*buffer = malloc(*size);
 	lseek(fd, exec_buffer_size, SEEK_SET);
 	read(fd, *buffer, *size);

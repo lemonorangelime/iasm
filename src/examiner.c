@@ -104,28 +104,23 @@ char * examiner_parse_slash(char * line, char * type, char * size, int * count) 
 	return line + 1;
 }
 
-int print_float(uint64_t data, int size) {
-	double d = 0.0;
-	switch (size) {
-		case 'b': d = float8_decode(data); break;
-		case 'w': d = float16_decode(data); break;
-		case 'd': d = float32_decode(data); break;
-		case 'q': d = float64_decode(data); break;
-	}
-	return printf("%lf", d);
+int print_float(uint64_t data, char size) {
+	double (* decoders[])(uint64_t) = {float8_decode, float16_decode, float32_decode, float64_decode};
+	register double d = 0.0;
+	int i = examiner_decode_size_index(size);
+	return printf("%lf", decoders[i](data));
 }
 
 int examine(char * line) {
 	if ((*line != 'x') || (line[1] != '/' && line[1] != ' ')) {
 		return 0; // match failed
 	}
-	uint64_t address = 0;
+	uintptr_t address = 0;
 	int count = 1;
 	char type = 'x';
 	char size = 'b';
 
 	line = examiner_parse_slash(line, &type, &size, &count);
-
 	if (examiner_validate_size(size) || examiner_validate_type(type)) {
 		return 0; // match failed
 	}

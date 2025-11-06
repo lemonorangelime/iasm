@@ -11,41 +11,28 @@ typedef struct {
 } __attribute__((packed)) fpu_float_t; // 80 bits
 
 typedef struct {
-	double a;
-	double b;
+	uint8_t a[16];
 } __attribute__((packed)) xmm_float_t;
 
 typedef struct {
-	double a;
-	double b;
-	double c;
-	double d;
+	uint8_t a[32];
 } __attribute__((packed)) ymm_float_t;
 
 typedef struct {
-	uint64_t rax;
-	uint64_t rbx;
-	uint64_t rcx;
-	uint64_t rdx;
-	uint64_t rsp;
-	uint64_t rbp;
-	uint64_t rsi;
-	uint64_t rdi;
-	uint64_t r8;
-	uint64_t r9;
-	uint64_t r10;
-	uint64_t r11;
-	uint64_t r12;
-	uint64_t r13;
-	uint64_t r14;
-	uint64_t r15;
-	uint64_t rflags;
+	uint32_t eax;
+	uint32_t ebx;
+	uint32_t ecx;
+	uint32_t edx;
+	uint32_t esp;
+	uint32_t ebp;
+	uint32_t esi;
+	uint32_t edi;
 } __attribute__((packed)) registers_t;
 
 typedef struct {
-	uint16_t ctrl;
-	uint16_t status;
-	uint16_t tag;
+	uint16_t fcw;
+	uint16_t fsw;
+	uint16_t ftw;
 	uint16_t fop;
 	uint64_t fip;
 	uint64_t fdp;
@@ -104,17 +91,6 @@ extern int ymm_type;
 extern uint16_t print_flags;
 
 enum {
-	FLOAT64,
-	FLOAT32,
-	INT256,
-	INT128,
-	INT64,
-	INT32,
-	INT16,
-	INT8
-};
-
-enum {
 	PRINT_GENERAL	= 0b00000001,
 	PRINT_XMM	= 0b00000010,
 	PRINT_YMM	= 0b00000100,
@@ -124,9 +100,10 @@ enum {
 void print_xmm(void * p, int as);
 void print_ymm(void * p, int as);
 void dump_registers();
-uint64_t * lookup_register(char * name);
+void * lookup_register(char * name);
 uint64_t lookup_register_mask(char * name);
-char * lookup_register_specifier(char * name);
+int lookup_register_type(char * name);
+int lookup_register_size(char * name);
 fpu_float_t * lookup_fpuregister(char * name);
 xmm_float_t * lookup_xmmregister(char * name);
 ymm_float_t * lookup_ymmregister(char * name);

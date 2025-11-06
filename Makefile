@@ -1,57 +1,28 @@
-ifeq ($(PREFIX),)
-        PREFIX := /usr/local
-endif
+MAKE := make
 
-BUILD_DIR := build
+default: depends share default
 
-CC := gcc
-ASM := nasm
-ASMFLAGS := -f elf64 -I include/
-CCFLAGS := -flto -s -Oz -ftree-vectorize -fomit-frame-pointer -m64 -mhard-float -fno-stack-protector -Iinclude -Wno-address-of-packed-member -z noexecstack -z noseparate-code
-LD := ld
-LDFLAGS := --strip-all --discard-all --discard-locals --strip-debug
+depends:
+	if [ ! -d "./vm" ]; then \
+		git clone https://github.com/lemonorangelime/vm; \
+	fi
+	cd vm; \
+	git pull; \
+	make; \
+	cd ..;
 
-STRUCTURE := $(shell find src/ -type d)
-FILES := $(addsuffix /*,$(STRUCTURE))
-FILES := $(wildcard $(FILES))
-
-SOURCES := $(filter %.c,$(FILES))
-ASM_SOURCES := $(filter %.asm,$(FILES))
-
-OBJS := $(subst src/,build/,$(SOURCES:%.c=%.c.o))
-ASM_OBJS := $(subst src/,build/,$(ASM_SOURCES:%.asm=%.asm.o))
-
-BUILD_STRUCTURE := $(subst src/,build/,$(STRUCTURE))
-
-OUTPUT := iasm
-
-default: mkdir $(OUTPUT)
-
-mkdir:
-	mkdir -p ${BUILD_DIR} ${BUILD_STRUCTURE}
+install:
+	make -f Makefile_x86_64 install
 
 clean:
-	rm -rf ${BUILD_DIR} ${OUTPUT}
+	rm -rf ./vm/ ./bios/
+	make -f Makefile_x86_64 clean
+	make -f Makefile_x86 clean
 
-$(BUILD_DIR)/%.c.o: src/%.c
-	$(CC) $(CCFLAGS) $^ -c -o $@
+share:
+	mkdir share/bios/
+	cp bios/bios.bin share/bios/
 
-$(BUILD_DIR)/%.asm.o: src/%.asm
-	$(ASM) $(ASMFLAGS) $^ -o $@
-
-$(OUTPUT): $(OBJS) $(ASM_OBJS)
-	$(CC) $(CCFLAGS) $^ -o $@
-	objcopy --remove-section .note --remove-section .note.gnu.property --remove-section .note.ABI-tag --remove-section .hash --remove-section .gnu.hash --remove-section .gnu.version --remove-section .comment $@
-	strip --strip-unneeded --strip-debug --strip-section-headers $@
-
-# "iasm" seems to be a pretty common name
-install: $(OUTPUT)
-	if [ -f "$(PREFIX)/bin/$(OUTPUT)" ]; then \
-		echo "\e[0;31mERROR\e[0m: File conflict. $(PREFIX)/bin/$(OUTPUT) already exists"; \
-		exit; \
-	else \
-		install -m 775 $(OUTPUT) $(PREFIX)/bin/; \
-	fi
-
-uninstall:
-	rm $(PREFIX)/bin/$(OUTPUT)
+%:
+	make -f Makefile_x86_64 $@
+	make -f Makefile_x86 $@

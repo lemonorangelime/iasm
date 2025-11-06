@@ -1,3 +1,9 @@
-build/
+build_*/
+build_*
+bios/
+bios
+vm/
+vm
 *.swp
 iasm
+iasm.gz

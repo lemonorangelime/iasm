@@ -11,8 +11,8 @@ double float8_decode(uint64_t f) {
 	d |= ((f >> 6) & 0b01) << 62;
 	d |= ((f >> 7) & 0b1) << 63;
 
-	d |= (exponent ? 0b01111111000l : 0l) << 52;
-	d &= ~((exponent_top ? 0b01111111000l : 0l) << 52);
+	d |= (exponent ? 0b01111111000ull : 0ull) << 52;
+	d &= ~((exponent_top ? 0b01111111000ull : 0ull) << 52);
 	return *(double *) &d;
 }
 
@@ -25,11 +25,12 @@ double float16_decode(uint64_t f) {
 	d |= ((f >> 14) & 0b01) << 62;
 	d |= ((f >> 15) & 0b1) << 63;
 
-	d |= (exponent ? 0b01111110000l : 0l) << 52;
-	d &= ~((exponent_top ? 0b01111110000l : 0l) << 52);
+	d |= (exponent ? 0b01111110000ull : 0ull) << 52;
+	d &= ~((exponent_top ? 0b01111110000ull : 0ull) << 52);
 	return *(double *) &d;
 }
 
+/*
 // these arent so abnormal
 double float32_decode(uint64_t f) {
 	return *(float *) &f;
@@ -37,4 +38,4 @@ double float32_decode(uint64_t f) {
 
 double float64_decode(uint64_t f) {
 	return *(double *) &f;
-}
+}*/

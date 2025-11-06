@@ -15,30 +15,16 @@
 #include <main.h>
 #include <version.h>
 #include <examiner.h>
+#include <dynamic.h>
+#include <types.h>
+#include <platform.h>
+#include <vmmode.h>
 
 help_topic_t help_topics[];
 int topic_count;
 
-int decode_type(char * type) {
-	if (strcasecmp(type, "float64") == 0) { // float
-		return FLOAT64;
-	} else if (strcasecmp(type, "float32") == 0) {
-		return FLOAT32;
-	} else if (strcasecmp(type, "int256") == 0) { // int
-		return INT256;
-	} else if (strcasecmp(type, "int128") == 0) {
-		return INT128;
-	} else if (strcasecmp(type, "int64") == 0) {
-		return INT64;
-	} else if (strcasecmp(type, "int32") == 0) {
-		return INT32;
-	} else if (strcasecmp(type, "int16") == 0) {
-		return INT16;
-	} else if (strcasecmp(type, "int8") == 0) {
-		return INT8;
-	}
-	return INT8;
-}
+int linking_allowed = 1;
+int linking_performed = 0;
 
 int decode_print_flag(char * type) {
 	if (strcasecmp(type, "general") == 0) {
@@ -53,58 +39,16 @@ int decode_print_flag(char * type) {
 	return -1;
 }
 
-int save_state(char * filename) {
-	int fd = open(filename, O_CREAT | O_RDWR, 0664);
-	int asmfd = open("/tmp/.temp_asm.asm", O_CREAT | O_RDWR, 0664);
-	if ((fd < 0) || (asmfd < 0)) {
-		printf("error writing file\n");
-		close(fd);
-		close(asmfd);
-		return 1;
+void setup_builtins() {
+	print_flags = PRINT_GENERAL | PRINT_FPU;
+	if (platform != PLATFORM_X86 && platform != PLATFORM_X86_64) {
+		return;
 	}
-	ssize_t asmsize = fdsize(asmfd);
-	if (asmsize < 0) {
-		printf("error writing file\n");
-		close(fd);
-		close(asmfd);
-		return 1;
+	if (xsave_supported) {
+		print_flags |= PRINT_YMM;
+	} else if (fxsave_supported) {
+		print_flags |= PRINT_XMM;
 	}
-	write(fd, &register_save, sizeof(registers_t));
-	write(fd, &return_point, 8);
-	write(fd, &fpu_save, 1024); // 
-	write(fd, stack_buffer, 4096);
-	write(fd, exec_buffer, 4096);
-	sendfile(fd, asmfd, NULL, asmsize);
-	close(fd);
-	close(asmfd);
-	return 1;
-}
-
-int load_state(char * filename) {
-	int fd = open(filename, O_RDWR, 0664);
-	int asmfd = open("/tmp/.temp_asm.asm", O_CREAT | O_RDWR, 0664);
-	if ((fd < 0) || (asmfd < 0)) {
-		printf("could not find file\n");
-		close(fd);
-		close(asmfd);
-		return 1;
-	}
-	ssize_t asmsize = fdsize(fd) - (sizeof(registers_t) + 8 + 1024 + 4096);
-	if (asmsize < 0) {
-		printf("file not big enough\n");
-		close(fd);
-		close(asmfd);
-		return 1;
-	}
-	read(fd, &register_save, sizeof(registers_t));
-	read(fd, &return_point, 8);
-	read(fd, &fpu_save, 1024);
-	read(fd, stack_buffer, 4096);
-	read(fd, exec_buffer, 4096);
-	sendfile(asmfd, fd, NULL, asmsize);
-	close(fd);
-	close(asmfd);
-	return 1;
 }
 
 int print_register(char * regname, char * type) {
@@ -112,9 +56,15 @@ int print_register(char * regname, char * type) {
 	if (!p) {
 		return 1;
 	}
-	uint64_t mask = lookup_register_mask(regname);
-	char * specifier = lookup_register_specifier(regname);
-	printf(specifier, *p & mask);
+	int type_identifier = *type ? decode_type(type) : lookup_register_type(regname); // use type prefix OR lookup default type
+	int type_size = decode_type_size(type_identifier); // size
+	int register_size = lookup_register_size(regname);
+	if (type_size > register_size) {
+		printf("type too large\n");
+		return 0;
+	}
+
+	print_typed_bytes(p, type_identifier, register_size);
 	putchar('\n');
 	return 0;
 }
@@ -124,7 +74,16 @@ int print_fpu_register(char * regname, char * type) {
 	if (!f) {
 		return 1;
 	}
-	printf("%lf\n", fpu_float_to_double(f));
+
+	int type_identifier = *type ? decode_type(type) : FLOAT80; // use type prefix OR default type
+	int type_size = decode_type_size(type_identifier); // size
+	if (type_size > 10) {
+		printf("type too large\n");
+		return 0;
+	}
+
+	print_typed_bytes(f, type_identifier, 10);
+	putchar('\n');
 	return 0;
 }
 
@@ -133,7 +92,6 @@ int print_xmm_register(char * regname, char * type) {
 	if (!xp) {
 		return 1;
 	}
-	// future: allow this `print FLOAT64 xmm0` thing for general registers aswell?
 	print_xmm(xp, *type ? decode_type(type) : xmm_type);
 	putchar('\n');
 	return 0;
@@ -150,21 +108,34 @@ int print_ymm_register(char * regname, char * type) {
 }
 
 int print_label(char * label, char * type) {
-	uint64_t address = 0;
+	uintptr_t address = 0;
 	if (resolve_label(label, &address)) {
 		return 1;
 	}
-	printf("0x%.16llx\n", address);
+	int type_identifier = *type ? decode_type(type) : INT64;
+	int type_size = decode_type_size(type_identifier);
+	if (type_size > 8) {
+		printf("type too large\n");
+		return 0;
+	}
+	print_typed_value(&address, type_identifier, 8); // intentional print_typed_value (singular), if you do `print DWORD label`, you likely expect it to be truncated
+	putchar('\n');
+	//printf("0x%.16llx\n", address);
 	return 0;
 }
 
 int print_function(char * regname, char * type) {
 	int errors = 0;
 	errors += print_register(regname, type);
-	errors += print_fpu_register(regname, type);
-	errors += print_xmm_register(regname, type);
-	errors += print_ymm_register(regname, type);
 	errors += print_label(regname, type);
+	switch (platform) {
+		case PLATFORM_X86_64:
+		case PLATFORM_X86:
+			errors += print_fpu_register(regname, type);
+			errors += print_xmm_register(regname, type);
+			errors += print_ymm_register(regname, type);
+			break;
+	}
 	return !(errors == 5);
 }
 
@@ -199,9 +170,62 @@ void print_topic(char * topic_name) {
 	puts(topic->message);
 }
 
+void fake_symbol_resolution(char * name, uintptr_t address) {
+	char buffer[2048];
+	int c = sprintf(buffer, "%s equ 0x%llx", name, address);
+	if (c < 1) {
+		return;
+	}
+
+	void * codebuffer = NULL;
+	ssize_t size = 0;
+        int stat = assemble(buffer, &codebuffer, &size);
+        if (size == -1 || stat != 0) {
+                asm_rewind();
+                return;
+        }
+}
+
+int long_extern_function(char * library, char * local_name, char * lib_name) {
+	void * handle = dynamic_lookup_library(library);
+	if (!handle) {
+		if (dynamic_load_library(library)) {
+			printf("symbol resolution failed\n");
+			return 1;
+		}
+		handle = dynamic_lookup_library(library);
+	}
+	void * p = dynamic_resolve_handle(handle, lib_name);
+	if (!p) {
+		printf("symbol resolution failed\n");
+		return 1;
+	}
+	fake_symbol_resolution(local_name, (uintptr_t) p);
+	return 1;
+}
+
+int short_extern_function(char * library, char * symbol) {
+	void * handle = dynamic_lookup_library(library);
+	if (!handle) {
+		if (dynamic_load_library(library)) {
+			printf("symbol resolution failed\n");
+			return 1;
+		}
+		handle = dynamic_lookup_library(library);
+	}
+	void * p = dynamic_resolve_handle(handle, symbol);
+	if (!p) {
+		printf("symbol resolution failed\n");
+		return 1;
+	}
+	fake_symbol_resolution(symbol, (uintptr_t) p);
+	return 1;
+}
+
 int execute_builtins(char * line) {
-	char buffer[255] = {0};
-	char buffer2[255] = {0};
+	char buffer[0xff] = {0};
+	char buffer2[0xff] = {0};
+	char buffer3[0xff] = {0};
 	if (strcmp(line, "exit") == 0) {
 		return 2;
 	}
@@ -209,7 +233,38 @@ int execute_builtins(char * line) {
 		printf("%d.%d.%d\n", major_version, minor_version, patch_version);
 		return 1;
 	}
-	if (strcmp(line, "dump") == 0) {
+	if (strlen(line) >= 4 && memcmp(line, "help", 4) == 0) {
+		if (line[4] == ' ' && line[5] != 0) {
+			print_topic(line + 5);
+			return 1;
+		}
+		puts("version       |  print iasm version");
+		puts("freeze        |  pause execution");
+		puts("unfreeze      |  unpause execution");
+		puts("assemble      |  assemble instruction (assemble addsd xmm0, xmm1)");
+		puts("xmm_type      |  set default type for xmm registers (xmm_type INT256/128/64/32/16/8 / FLOAT64/32)");
+		puts("ymm_type      |  set default type for ymm registers (ymm_type INT256/128/64/32/16/8 / FLOAT64/32)");
+		puts("dump_enable   |  enable function of `dump` command (general, xmm, ymm, fpu)");
+		puts("dump_disable  |  disable function of `dump` command (general, xmm, ymm, fpu)");
+		puts("print         |  print value of register (print xmm0 / print FLOAT64 xmm0)");
+		puts("x             |  examine memory (x/10xq 0x1234)");
+		puts("dump          |  print all registers");
+		puts("exit          |  exit program");
+		return 1;
+	}
+	if (strlen(line) >= 4 && memcmp(line, "dump", 4) == 0 && (line[4] == 0 || line[4] == ' ')) {
+		if (line[4] == ' ' && line[5] != 0) {
+			int flag = decode_print_flag(line + 5);
+			if (flag == -1) {
+				printf("bad flag\n");
+				return 1;
+			}
+			int old_flags = print_flags;
+			print_flags = flag;
+			dump_registers();
+			print_flags = old_flags;
+			return 1;
+		}
 		dump_registers();
 		return 1;
 	}
@@ -221,24 +276,47 @@ int execute_builtins(char * line) {
 		paused = 0;
 		return 1;
 	}
-	if (strlen(line) >= 4 && memcmp(line, "help", 4) == 0) {
-		if (line[4] == ' ' && line[5] != 0) {
-			print_topic(line + 5);
+	if (strcmp(line, "vmmode") == 0) {
+		printf("TODO: impliment\n");
+		return 1;
+		/* if (linking_performed) {
+			printf("can not enter VM mode while dynamically linked\n");
 			return 1;
 		}
-		puts("freeze        |  pause execution");
-		puts("unfreeze      |  unpause execution");
-		puts("assemble      |  assemble instruction (assemble addsd xmm0, xmm1)");
-		puts("xmm_type      |  set default type for xmm registers (xmm_type INT256/128/64/32/16/8 / FLOAT64/32)");
-		puts("ymm_type      |  set default type for ymm registers (ymm_type INT256/128/64/32/16/8 / FLOAT64/32)");
-		puts("dump_enable   |  enable function of `dump` command (general, xmm, ymm, fpu)");
-		puts("dump_disable  |  disable function of `dump` command (general, xmm, ymm, fpu)");
-		puts("save_state    |  save state to file (save_state file.bin)");
-		puts("load_state    |  load state from file (load_state file.bin)");
-		puts("print         |  print value of register (print xmm0 / print FLOAT64 xmm0)");
-		puts("x             |  examine memory (x/10xq 0x1234)");
-		puts("dump          |  print all registers");
-		puts("exit          |  exit program");
+		linking_allowed = 0;
+		vmmode_init();
+		return 1; */
+	}
+	if (sscanf(line, "extern %s%s%s", buffer, buffer2, buffer3) > 0) {
+		if (!linking_allowed) {
+			printf("can not dynamiclly link while in VM mode\n");
+			return 1;
+		}
+		linking_performed = 1;
+		if (*buffer3) {
+			return long_extern_function(buffer2, buffer, buffer3);
+		}
+		if (*buffer2) {
+			return short_extern_function(buffer2, buffer);
+		}
+
+		void * p = dynamic_resolve(buffer);
+		if (!p) {
+			printf("symbol resolution failed\n");
+			return 1;
+		}
+		fake_symbol_resolution(buffer, (uintptr_t) p);
+		return 1;
+	}
+	if (sscanf(line, "dlopen %s", buffer) > 0) {
+		if (!linking_allowed) {
+			printf("can not dynamiclly link while in VM mode\n");
+			return 1;
+		}
+		linking_performed = 1;
+		if (dynamic_load_library(buffer)) {
+			printf("dlopen failed\n");
+		}
 		return 1;
 	}
 	if (sscanf(line, "xmm_type %s", buffer) > 0) {
@@ -262,14 +340,8 @@ int execute_builtins(char * line) {
 		if (flag == -1) {
 			return 0;
 		}
-		print_flags |= flag;
+		print_flags &= ~flag;
 		return 1;
-	}
-	if (sscanf(line, "save_state %s", buffer) > 0) {
-		return save_state(buffer);
-	}
-	if (sscanf(line, "load_state %s", buffer) > 0) {
-		return load_state(buffer);
 	}
 	if (strlen(line) > 9 && memcmp(line, "assemble ", 9) == 0) {
 		return assemble_function(line + 9);
