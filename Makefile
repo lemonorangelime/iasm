@@ -11,15 +11,6 @@ depends:
 	make; \
 	cd ..;
 
-install:
-	make -f Makefile_x86_64 install
-
-install_x86:
-	make -f Makefile_x86 install
-
-install_x86_64:
-	make -f Makefile_x86_64 install
-
 clean:
 	rm -rf ./vm/ ./bios/
 	make -f Makefile_x86_64 clean
