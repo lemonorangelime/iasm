@@ -1,6 +1,6 @@
 MAKE := make
 
-default: depends share default
+default: depends default
 
 depends:
 	if [ ! -d "./vm" ]; then \
@@ -12,13 +12,9 @@ depends:
 	cd ..;
 
 clean:
-	rm -rf ./vm/ ./bios/
+	rm -rf ./vm/
 	make -f Makefile_x86_64 clean
 	make -f Makefile_x86 clean
-
-share:
-	mkdir share/bios/
-	cp bios/bios.bin share/bios/
 
 %:
 	make -f Makefile_x86_64 $@
