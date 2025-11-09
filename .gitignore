@@ -5,5 +5,7 @@ bios
 vm/
 vm
 *.swp
-iasm
-iasm.gz
+x86-iasm
+x86-iasm.gz
+x86_64-iasm
+x86_64-iasm.gz
