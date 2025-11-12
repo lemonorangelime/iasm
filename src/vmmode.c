@@ -1,3 +1,4 @@
+/*
 #include <unistd.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -60,3 +61,4 @@ uint64_t vmmode_resume() {
 	printf("HELLO!");
 	return 0;
 }
+*/

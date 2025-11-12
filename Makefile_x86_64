@@ -42,10 +42,11 @@ $(BUILD_DIR)/%.c.o: arch/$(ARCH)/src/%.c
 $(BUILD_DIR)/%.$(ASM_EXT).o: arch/$(ARCH)/src/%.$(ASM_EXT)
 	$(ASM) $(ASMFLAGS) $^ -o $@
 
-$(OUTPUT): $(OBJS) $(ASM_OBJS) $(VM_LIB)
+# $(VM_LIB)
+$(OUTPUT): $(OBJS) $(ASM_OBJS)
 	$(CC) $(CCFLAGS) $^ -o $@
 	# we need this information now
-	#objcopy --remove-section .note --remove-section .note.gnu.property --remove-section .note.ABI-tag --remove-section .hash --remove-section .gnu.hash --remove-section .gnu.version --remove-section .comment --remove-section .eh_frame_hdr --remove-section .eh_frame iasm
+	#objcopy --remove-section .note --remove-section .note.gnu.property --remove-section .note.ABI-tag --remove-section .hash --remove-section .gnu.hash --remove-section .gnu.version --remove-section .comment --remove-section .eh_frame_hdr --remove-section .eh_frame $@
 	strip --strip-unneeded --strip-debug --strip-section-headers $@
 	gzip -fqk9 $@
 

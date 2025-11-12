@@ -15,6 +15,7 @@ char * fpuregnames[] = {"none", "st0", "st1", "st2", "st3", "st4", "st5", "st6",
 char * fpuctrlnames[] = {"none", "fcw", "fsw", "ftw", "fop"};
 char * xmmregnames[] = {"none", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"};
 char * ymmregnames[] = {"none", "ymm0", "ymm1", "ymm2", "ymm3", "ymm4", "ymm5", "ymm6", "ymm7"};
+char * zmmregnames[] = {"none", "zmm0", "zmm1", "zmm2", "zmm3", "zmm4", "zmm5", "zmm6", "zmm7"};
 
 int simd_reg_count = 8;
 
@@ -23,6 +24,7 @@ int fpureg_count = sizeof(fpuregnames) / sizeof(fpuregnames[0]);
 int fpuctrlreg_count = sizeof(fpuctrlnames) / sizeof(fpuctrlnames[0]);
 int xmmreg_count = sizeof(xmmregnames) / sizeof(xmmregnames[0]);
 int ymmreg_count = sizeof(ymmregnames) / sizeof(ymmregnames[0]);
+int zmmreg_count = sizeof(zmmregnames) / sizeof(zmmregnames[0]);
 
 uint16_t print_flags = PRINT_GENERAL | PRINT_XMM | PRINT_FPU; // no PRINT_YMM
 
@@ -44,6 +46,18 @@ void print_ymm(void * p, int type) {
 	p += ((uintptr_t) &fpu_save.ymm0_high) - ((uintptr_t) &fpu_save.xmm0);
 	memcpy(buffer + 16, p, 16);
 	print_typed_bytes(buffer, type, 32);
+}
+
+void print_zmm(void * p, int type) {
+	uint8_t buffer[64];
+	int index = (((uintptr_t) p) - ((uintptr_t) &fpu_save.xmm0)) >> 4;
+	memcpy(buffer, p, 16);
+	p += ((uintptr_t) &fpu_save.ymm0_high - (uintptr_t) &fpu_save.xmm0);
+	memcpy(buffer + 16, p, 16);
+	p = (void *) ((uintptr_t) &fpu_save.zmm0_high) + (index << 5);
+	memcpy(buffer + 32, p, 32);
+	p = buffer;
+	print_typed_bytes(p, type, 64);
 }
 
 int xmm_per_line(int type) {
@@ -130,6 +144,24 @@ int dump_ymm_registers(int index) {
 	return 1;
 }
 
+int dump_zmm_registers(int index) {
+	if (!(print_flags & PRINT_ZMM)) {
+		return 0;
+	}
+	int printed = 1;
+	putchar((!!index) * '\n');
+	while (printed <= simd_reg_count) {
+		char * name = zmmregnames[printed];
+		zmm_float_t * f = lookup_zmmregister(name);
+		print_uppercase(name);
+		putchar('=');
+		print_zmm(f, zmm_type);
+		printed++;
+		putchar('\n');
+	}
+	return 1;
+}
+
 int dump_fpu_registers(int index) {
 	if (!(print_flags & PRINT_FPU)) {
 		return 0;
@@ -165,8 +197,9 @@ void dump_registers() {
 	c += dump_general_registers(c);
 	c += dump_xmm_registers(c);
 	c += dump_ymm_registers(c);
+	c += dump_zmm_registers(c);
 
-	if (print_flags & (PRINT_XMM | PRINT_YMM)) {
+	if (print_flags & (PRINT_XMM | PRINT_YMM | PRINT_ZMM)) {
 		printf("\nMXCSR=0x%.8lx\n", fpu_save.mxcsr);
 	}
 
@@ -234,6 +267,16 @@ ymm_float_t * lookup_ymmregister(char * name) {
 	}
 	index -= 1;
 	return (ymm_float_t *) &registers[index];
+}
+
+zmm_float_t * lookup_zmmregister(char * name) {
+	xmm_float_t * registers = &fpu_save.xmm0;
+	int index = lookup_index(zmmregnames, zmmreg_count, name);
+	if (index == 0) {
+		return NULL;
+	}
+	index -= 1;
+	return (zmm_float_t *) &registers[index];
 }
 
 uint64_t lookup_register_mask(char * name) {

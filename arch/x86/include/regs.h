@@ -19,6 +19,10 @@ typedef struct {
 } __attribute__((packed)) ymm_float_t;
 
 typedef struct {
+	uint8_t a[64];
+} __attribute__((packed)) zmm_float_t;
+
+typedef struct {
 	uint32_t eax;
 	uint32_t ebx;
 	uint32_t ecx;
@@ -27,6 +31,7 @@ typedef struct {
 	uint32_t ebp;
 	uint32_t esi;
 	uint32_t edi;
+	uint32_t eflags;
 } __attribute__((packed)) registers_t;
 
 typedef struct {
@@ -79,7 +84,23 @@ typedef struct {
 	xmm_float_t ymm13_high;
 	xmm_float_t ymm14_high;
 	xmm_float_t ymm15_high;
-	char padding[192];
+	char padding[0x40];
+	ymm_float_t zmm0_high;
+	ymm_float_t zmm1_high;
+	ymm_float_t zmm2_high;
+	ymm_float_t zmm3_high;
+	ymm_float_t zmm4_high;
+	ymm_float_t zmm5_high;
+	ymm_float_t zmm6_high;
+	ymm_float_t zmm7_high;
+	ymm_float_t zmm8_high;
+	ymm_float_t zmm9_high;
+	ymm_float_t zmm10_high;
+	ymm_float_t zmm11_high;
+	ymm_float_t zmm12_high;
+	ymm_float_t zmm13_high;
+	ymm_float_t zmm14_high;
+	ymm_float_t zmm15_high;
 } __attribute__((packed)) fpu_registers_t;
 
 extern char * regnames[];
@@ -88,6 +109,7 @@ extern registers_t register_save;
 extern fpu_registers_t fpu_save;
 extern int xmm_type;
 extern int ymm_type;
+extern int zmm_type;
 extern uint16_t print_flags;
 
 enum {
@@ -95,10 +117,12 @@ enum {
 	PRINT_XMM	= 0b00000010,
 	PRINT_YMM	= 0b00000100,
 	PRINT_FPU	= 0b00001000,
+	PRINT_ZMM	= 0b00010000,
 };
 
 void print_xmm(void * p, int as);
 void print_ymm(void * p, int as);
+void print_zmm(void * p, int as);
 void dump_registers();
 void * lookup_register(char * name);
 uint64_t lookup_register_mask(char * name);
@@ -107,3 +131,4 @@ int lookup_register_size(char * name);
 fpu_float_t * lookup_fpuregister(char * name);
 xmm_float_t * lookup_xmmregister(char * name);
 ymm_float_t * lookup_ymmregister(char * name);
+zmm_float_t * lookup_zmmregister(char * name);

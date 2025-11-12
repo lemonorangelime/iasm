@@ -33,22 +33,12 @@ int decode_print_flag(char * type) {
 		return PRINT_XMM;
 	} else if (strcasecmp(type, "ymm") == 0) {
 		return PRINT_YMM;
+	} else if (strcasecmp(type, "zmm") == 0) {
+		return PRINT_ZMM;
 	} else if (strcasecmp(type, "fpu") == 0) {
 		return PRINT_FPU;
 	}
 	return -1;
-}
-
-void setup_builtins() {
-	print_flags = PRINT_GENERAL | PRINT_FPU;
-	if (platform != PLATFORM_X86 && platform != PLATFORM_X86_64) {
-		return;
-	}
-	if (xsave_supported) {
-		print_flags |= PRINT_YMM;
-	} else if (fxsave_supported) {
-		print_flags |= PRINT_XMM;
-	}
 }
 
 int print_register(char * regname, char * type) {
@@ -107,6 +97,16 @@ int print_ymm_register(char * regname, char * type) {
 	return 0;
 }
 
+int print_zmm_register(char * regname, char * type) {
+	void * zp = lookup_zmmregister(regname);
+	if (!zp) {
+		return 1;
+	}
+	print_zmm(zp, *type ? decode_type(type) : zmm_type);
+	putchar('\n');
+	return 0;
+}
+
 int print_label(char * label, char * type) {
 	uintptr_t address = 0;
 	if (resolve_label(label, &address)) {
@@ -134,9 +134,10 @@ int print_function(char * regname, char * type) {
 			errors += print_fpu_register(regname, type);
 			errors += print_xmm_register(regname, type);
 			errors += print_ymm_register(regname, type);
-			break;
+			errors += print_zmm_register(regname, type);
+			return !(errors == 6);
 	}
-	return !(errors == 5);
+	return !(errors == 2);
 }
 
 int assemble_function(char * instruction) {
@@ -242,10 +243,11 @@ int execute_builtins(char * line) {
 		puts("freeze        |  pause execution");
 		puts("unfreeze      |  unpause execution");
 		puts("assemble      |  assemble instruction (assemble addsd xmm0, xmm1)");
-		puts("xmm_type      |  set default type for xmm registers (xmm_type INT256/128/64/32/16/8 / FLOAT64/32)");
-		puts("ymm_type      |  set default type for ymm registers (ymm_type INT256/128/64/32/16/8 / FLOAT64/32)");
-		puts("dump_enable   |  enable function of `dump` command (general, xmm, ymm, fpu)");
-		puts("dump_disable  |  disable function of `dump` command (general, xmm, ymm, fpu)");
+		puts("xmm_type      |  set default type for xmm registers (xmm_type INT256/128/64/32/16/8 / FLOAT64/32/16/8)");
+		puts("ymm_type      |  set default type for ymm registers (ymm_type INT256/128/64/32/16/8 / FLOAT64/32/16/8)");
+		puts("zmm_type      |  set default type for zmm registers (zmm_type INT256/128/64/32/16/8 / FLOAT64/32/16/8)");
+		puts("dump_enable   |  enable function of `dump` command (general, xmm, ymm, zmm, fpu)");
+		puts("dump_disable  |  disable function of `dump` command (general, xmm, ymm, zmm, fpu)");
 		puts("print         |  print value of register (print xmm0 / print FLOAT64 xmm0)");
 		puts("x             |  examine memory (x/10xq 0x1234)");
 		puts("dump          |  print all registers");
@@ -327,6 +329,10 @@ int execute_builtins(char * line) {
 		ymm_type = decode_type(buffer);
 		return 1;
 	}
+	if (sscanf(line, "zmm_type %s", buffer) > 0) {
+		zmm_type = decode_type(buffer);
+		return 1;
+	}
 	if (sscanf(line, "dump_enable %s", buffer) > 0) {
 		int flag = decode_print_flag(buffer);
 		if (flag == -1) {
@@ -360,8 +366,9 @@ int execute_builtins(char * line) {
 
 
 help_topic_t help_topics[] = {
-	{"xmm_type",	"sets default dump/print type for xmm registers\ntype can be FLOAT64 / 32 or INT256 / 128 / 64 / 32 / 16 / 8"},
-	{"ymm_type",	"sets default dump/print type for ymm registers\ntype can be FLOAT64 / 32 or INT256 / 128 / 64 / 32 / 16 / 8"},
+	{"xmm_type",	"sets default dump/print type for xmm registers\ntype can be FLOAT64/32/16/8 or INT256/128/64/32/16/8"},
+	{"ymm_type",	"sets default dump/print type for ymm registers\ntype can be FLOAT64/32/16/8 or INT256/128/64/32/16/8"},
+	{"zmm_type",	"sets default dump/print type for zmm registers\ntype can be FLOAT64/32/16/8 or INT256/128/64/32/16/8"},
 	{"print",	"prints register or label value (print rax, print label)\ncan also take a type for xmm registers (print FLOAT64 xmm0)"},
 	{"assemble",	"assembles an instruction and prints the result as a series of bytes\n\n        > assemble fldpi\n        0xd9 0xeb\n"},
 	{"x",		"examines memory (x/[count][type][size])\n\ncount: number of units to print\ntype: unit type (x = hexadecimal, d = signed digit, u = unsigned digit, o = octal, c = character, b = binary, f = float)\nsize: unit size (b = byte, w = word, d = dword, q = qword)\n\n        > ~example: dd 0x12345678\n        > x/1xd example\n        0x12345678\n        > x/4x example\n        0x78 0x56 0x34 0x12\n"}

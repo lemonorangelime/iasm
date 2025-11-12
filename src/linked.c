@@ -1,4 +1,3 @@
-/*
 #include <linked.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -39,4 +38,3 @@ linked_t * linked_append(linked_t * list, void * p) {
 	node->next = NULL;
 	return list;
 }
-*/
