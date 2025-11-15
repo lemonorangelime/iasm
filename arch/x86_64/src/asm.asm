@@ -36,6 +36,7 @@ sym r13_save, resq 1
 sym r14_save, resq 1
 sym r15_save, resq 1
 sym rflags_save, resq 1
+sym return_point, resq 1
 
 sym caller_register_save
 sym caller_rax_save, resq 1
@@ -75,7 +76,6 @@ sym temp_r14_save, resq 1
 sym temp_r15_save, resq 1
 sym temp_rflags_save, resq 1
 
-sym return_point, resq 1
 sym context_switching, resd 1
 sym temp_context_switching, resd 1
 
@@ -200,7 +200,7 @@ sym asm_resume
 
 	jmp [rel return_point]
 
-sym asm_continue
+sym asm_exit_context
 	mov QWORD [rel rax_save], rax
 	mov QWORD [rel rbx_save], rbx
 	mov QWORD [rel rcx_save], rcx

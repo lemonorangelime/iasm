@@ -187,7 +187,7 @@ void fake_symbol_resolution(char * name, uintptr_t address) {
         }
 }
 
-int long_extern_function(char * library, char * local_name, char * lib_name) {
+int long_extern_function(char * line, char * library, char * local_name, char * lib_name) {
 	void * handle = dynamic_lookup_library(library);
 	if (!handle) {
 		if (dynamic_load_library(library)) {
@@ -201,11 +201,14 @@ int long_extern_function(char * library, char * local_name, char * lib_name) {
 		printf("symbol resolution failed\n");
 		return 1;
 	}
+	if (line[6] == 'f') {
+		p = asm_append_jmptable(p);
+	}
 	fake_symbol_resolution(local_name, (uintptr_t) p);
 	return 1;
 }
 
-int short_extern_function(char * library, char * symbol) {
+int short_extern_function(char * line, char * library, char * symbol) {
 	void * handle = dynamic_lookup_library(library);
 	if (!handle) {
 		if (dynamic_load_library(library)) {
@@ -219,8 +222,20 @@ int short_extern_function(char * library, char * symbol) {
 		printf("symbol resolution failed\n");
 		return 1;
 	}
+	if (line[6] == 'f') {
+		p = asm_append_jmptable(p);
+	}
 	fake_symbol_resolution(symbol, (uintptr_t) p);
 	return 1;
+}
+
+void clean_comment(char * buffer, char * next) {
+	char * s = buffer;
+	while (*s && *s != ';') { s++; }
+	if ((s == buffer || *s != 0) && next) {
+		*next = 0;
+	}
+	*s = 0;
 }
 
 int execute_builtins(char * line) {
@@ -289,23 +304,31 @@ int execute_builtins(char * line) {
 		vmmode_init();
 		return 1; */
 	}
-	if (sscanf(line, "extern %s%s%s", buffer, buffer2, buffer3) > 0) {
+	if ((sscanf(line, "externf %s%s%s", buffer, buffer2, buffer3) > 0) || (sscanf(line, "extern %s%s%s", buffer, buffer2, buffer3) > 0)) {
 		if (!linking_allowed) {
 			printf("can not dynamiclly link while in VM mode\n");
 			return 1;
 		}
+
+		clean_comment(buffer, buffer2);
+		clean_comment(buffer2, buffer3);
+		clean_comment(buffer3, NULL);
+
 		linking_performed = 1;
 		if (*buffer3) {
-			return long_extern_function(buffer2, buffer, buffer3);
+			return long_extern_function(line, buffer2, buffer, buffer3);
 		}
 		if (*buffer2) {
-			return short_extern_function(buffer2, buffer);
+			return short_extern_function(line, buffer2, buffer);
 		}
 
 		void * p = dynamic_resolve(buffer);
 		if (!p) {
 			printf("symbol resolution failed\n");
 			return 1;
+		}
+		if (line[6] == 'f') {
+			p = asm_append_jmptable(p);
 		}
 		fake_symbol_resolution(buffer, (uintptr_t) p);
 		return 1;

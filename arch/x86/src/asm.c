@@ -14,9 +14,11 @@
 #include <vars.h>
 
 // stack and ram must be fixed
-uint8_t * exec_buffer = (uint8_t *) 0x01000000;
-uint8_t * stack_buffer = (uint8_t *) 0x00800000;
+uint8_t * exec_buffer  = (uint8_t *) EXEC_ADDRESS;
+uint8_t * jmp_buffer  = (uint8_t *) JMP_ADDRESS;
+uint8_t * stack_buffer = (uint8_t *) STACK_ADDRESS;
 size_t exec_buffer_size = 0;
+size_t jmp_buffer_size = 0;
 
 int call_nasm() {
 	pid_t pid = fork();
@@ -37,6 +39,7 @@ int call_nasm() {
 
 void setup_executable_buffer() {
 	exec_buffer = (uint8_t *) mmap(exec_buffer, EXEC_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0); // whatever :shrug:
+	jmp_buffer = (uint8_t *) mmap(jmp_buffer, JMP_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0); // whatever :shrug:
 	stack_buffer = (uint8_t *) mmap(stack_buffer, STACK_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0); // executable stack because yeah
 	return_point = (uintptr_t) exec_buffer;
 }
@@ -44,7 +47,8 @@ void setup_executable_buffer() {
 void setup_registers() {
 	//memset(&register_save, 0, sizeof(registers_t));
 	//memset(&fpu_save, 0, 1024);
-	memset(exec_buffer, 0, 4096);
+	memset(exec_buffer, 0, EXEC_SIZE);
+	memset(jmp_buffer, 0, JMP_SIZE);
 	memset(stack_buffer, 0, STACK_SIZE);
 
 	return_point = (uintptr_t) exec_buffer;
@@ -55,15 +59,26 @@ uint64_t asm_execute(void * buffer, ssize_t size, int skip) {
 	memcpy(exec_buffer + exec_buffer_size, buffer, size);
 
 	exec_buffer_size += size;
-	exec_buffer[exec_buffer_size + 0] = 0x68; // push asm_continue
+	exec_buffer[exec_buffer_size + 0] = 0x68; // push asm_exit_context
 	exec_buffer[exec_buffer_size + 5] = 0xc3; // ret
-	*(uint32_t *) &exec_buffer[exec_buffer_size + 1] = (uint32_t) asm_continue;
+	*(uint32_t *) &exec_buffer[exec_buffer_size + 1] = (uint32_t) asm_exit_context;
 
 	if (!skip) {
 		asm_resume();
 	}
 	return_point = ((uintptr_t) exec_buffer) + exec_buffer_size;
 	return 0;
+}
+
+void * asm_append_jmptable(void * symbol) {
+	void * trampoline = &jmp_buffer[jmp_buffer_size];
+
+	jmp_buffer[jmp_buffer_size + 0] = 0x68; // push ? (symbol)
+	jmp_buffer[jmp_buffer_size + 5] = 0xc3; // ret
+	*(uint32_t *) &jmp_buffer[jmp_buffer_size + 1] = (uintptr_t) symbol;
+
+	jmp_buffer_size += 6;
+	return trampoline;
 }
 
 void asm_reset() {

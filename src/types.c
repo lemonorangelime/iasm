@@ -80,6 +80,18 @@ int decode_type_size(int type) {
 	}
 }
 
+void print_bool(void * p, int size) {
+	uint8_t * b = p;
+	while (size--) {
+		if (*b++ != 0) {
+			printf("true");
+			return;
+		}
+	}
+	printf("false");
+	return;
+}
+
 int print_typed_value(void * p, int type, int remaining) {
 	fpu_float_t * float80 = p;
 	double * float64 = p;
@@ -113,7 +125,7 @@ int print_typed_value(void * p, int type, int remaining) {
 		case INT32:	printf("0x%.8lx", *int32); break;
 		case INT16:	printf("0x%.4x", *int16); break;
 		case INT8:	printf("0x%.2x", *int8); break;
-		case BOOL:	printf("%s", (*int8) ? "true" : "false"); break;
+		case BOOL:	size = remaining; print_bool(p, size); break;
 	}
 	return size;
 }

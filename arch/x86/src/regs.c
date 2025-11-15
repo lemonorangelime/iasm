@@ -7,10 +7,10 @@
 #include <types.h>
 
 // dont care calling these whatever
-char * regnames[] = {"none", "eax", "ebx", "ecx", "edx", "esp", "ebp", "esi", "edi", "eflags"};
-char * reg16names[] = {"none", "ax", "bx", "cx", "dx", "sp", "bp", "si", "di", "flags"};
-char * reg8lnames[] = {"none", "al", "bl", "cl", "dl", "spl", "bpl", "sil", "dil", "flagsl"};
-char * reg8hnames[] = {"none", "ah", "bh", "ch", "dh", "sph", "bph", "sih", "dih", "flagsh"};
+char * regnames[] = {"none", "eax", "ebx", "ecx", "edx", "esp", "ebp", "esi", "edi", "eflags", "eip"};
+char * reg16names[] = {"none", "ax", "bx", "cx", "dx", "sp", "bp", "si", "di", "flags", "ip"};
+char * reg8lnames[] = {"none", "al", "bl", "cl", "dl", "spl", "bpl", "sil", "dil", "flagsl", "ipl"};
+char * reg8hnames[] = {"none", "ah", "bh", "ch", "dh", "sph", "bph", "sih", "dih", "flagsh", "iph"};
 char * fpuregnames[] = {"none", "st0", "st1", "st2", "st3", "st4", "st5", "st6", "st7"};
 char * fpuctrlnames[] = {"none", "fcw", "fsw", "ftw", "fop"};
 char * xmmregnames[] = {"none", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"};

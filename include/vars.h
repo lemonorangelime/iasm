@@ -1,4 +1,9 @@
 #pragma once
 
+#define STACK_ADDRESS 0x00800000
+#define EXEC_ADDRESS 0x01000000
+#define JMP_ADDRESS 0x7f000000
+
 #define STACK_SIZE (4096 * 16)
-#define EXEC_SIZE 4096
+#define EXEC_SIZE 0x01000000
+#define JMP_SIZE 0x01000000

@@ -32,6 +32,7 @@ typedef struct {
 	uint32_t esi;
 	uint32_t edi;
 	uint32_t eflags;
+	uint32_t eip;
 } __attribute__((packed)) registers_t;
 
 typedef struct {

@@ -70,8 +70,17 @@ void signal_handler(int signum, siginfo_t * info, ucontext_t * context) {
 		putchar('\n');
 	}
 
+
 	char * message = messages[signum - 1];
 	safe_puts(message);
+	if (signum == 5) {
+		int greg_size = sizeof(context->uc_mcontext.gregs) / sizeof(context->uc_mcontext.gregs[0]);
+		printf("\nCONTEXT DUMP\n");
+		for (int i = 0; i < greg_size; i++) {
+			printf("0x%.16llx ", context->uc_mcontext.gregs[i]);
+		}
+		printf("\n");
+	}
 	if (context_switching && message) {
 		context->uc_mcontext.gregs[REG_PC] = (uintptr_t) reload_state; // return to reload_state
 		return;

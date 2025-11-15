@@ -13,6 +13,7 @@ extern int temp_context_switching;
 extern int xsave_supported;
 extern int fxsave_supported;
 
+void * asm_append_jmptable(void * symbol);
 void setup_executable_buffer();
 uint64_t asm_resume();
 uint64_t asm_execute(void * buffer, ssize_t size, int skip);
@@ -23,5 +24,5 @@ void temp_reload_state();
 void setup_fpu();
 double fpu_float_to_double(fpu_float_t * fpu_float);
 void asm_rewind();
-void asm_continue();
+void asm_exit_context();
 void safe_memcpy(void * dest, void * src, size_t size);

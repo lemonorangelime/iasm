@@ -28,6 +28,7 @@ sym ebp_save, resd 1
 sym esi_save, resd 1
 sym edi_save, resd 1
 sym eflags_save, resd 1
+sym return_point, resd 1
 
 sym caller_register_save
 sym caller_eax_save, resd 1
@@ -51,7 +52,6 @@ sym temp_esi_save, resd 1
 sym temp_edi_save, resd 1
 sym temp_eflags_save, resd 1
 
-sym return_point, resd 1
 sym context_switching, resd 1
 sym temp_context_switching, resd 1
 
@@ -160,7 +160,7 @@ sym asm_resume
 
 	jmp [rel return_point]
 
-sym asm_continue
+sym asm_exit_context
 	mov DWORD [rel eax_save], eax
 	mov DWORD [rel ebx_save], ebx
 	mov DWORD [rel ecx_save], ecx

@@ -40,6 +40,7 @@ typedef struct {
 	uint64_t r14;
 	uint64_t r15;
 	uint64_t rflags;
+	uint64_t rip;
 } __attribute__((packed)) registers_t;
 
 typedef struct {
