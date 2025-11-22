@@ -1,11 +1,26 @@
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <regs.h>
-#include <asm.h>
+#include <iasm/regs.h>
+#include <iasm/asm.h>
+
+char * file_charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+void tmpname(char * path) {
+	char * prefix = "/tmp/.iasm-";
+	strcpy(path, prefix);
+	path += strlen(prefix);
+
+	int i = 16;
+	int characters = strlen(file_charset);
+	while (i--) {
+		*path++ = file_charset[random() % characters];
+	}
+	strcpy(path, ".tmp");
+}
 
 ssize_t my_fdsize(int fd) {
 	ssize_t cur = lseek(fd, 0, SEEK_CUR);
@@ -22,7 +37,7 @@ int resolve_label(char * label, uintptr_t * p) {
 	if (stat <= 0) {
 		return 1;
 	}
-	stat = assemble(statement, &buffer, &size);
+	stat = assemble(statement, &buffer, &size, NULL);
 	asm_rewind();
 	if ((stat != 0) || (size != 8)) {
 		return 1;

@@ -5,13 +5,15 @@
 #include <stddef.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <helpers.h>
-#include <signals.h>
+#include <iasm/helpers.h>
+#include <iasm/signals.h>
 #include <stdio.h>
-#include <regs.h>
-#include <asm.h>
-#include <builtins.h>
-#include <dynamic.h>
+#include <iasm/regs.h>
+#include <iasm/asm.h>
+#include <iasm/builtins.h>
+#include <iasm/dynamic.h>
+#include <iasm/setup.h>
+#include <iasm/nasm.h>
 
 int paused = 0;
 
@@ -39,15 +41,20 @@ int handle_statement(char * line) {
 	void * buffer = NULL;
 	ssize_t size = 0;
 	int skip = line[0] == '~';
-	int stat = assemble(line + skip, &buffer, &size);
+	int pipefd;
+	int stat = assemble(line + skip, &buffer, &size, &pipefd);
 	if (size == 0) {
+		close(pipefd);
 		return 0; // dont waste time executing nothing
 	}
 	if (size == -1 || stat != 0) {
-		printf("assembler error\n");
+		nasm_print_buffer(pipefd);
+		close(pipefd);
 		asm_rewind();
 		return 0;
 	}
+	close(pipefd);
+
 	asm_execute(buffer, size, paused || skip);
 	free(buffer);
 	return 0;
@@ -66,6 +73,7 @@ ssize_t read_input(char ** line, size_t * size) {
 int main(int argc, char * argv[]) {
 	char * line = NULL;
 	size_t line_size = 0;
+	setup();
 	register_handlers();
 	setup_executable_buffer();
 	asm_reset();
@@ -80,5 +88,6 @@ int main(int argc, char * argv[]) {
 		}
 		signaled = 0;
 	}
+	asm_cleanup();
 	return 0;
 }

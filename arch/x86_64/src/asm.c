@@ -1,6 +1,6 @@
 // todo: break this up
 
-#include <helpers.h>
+#include <iasm/helpers.h>
 #include <sys/mman.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,9 +9,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/wait.h>
-#include <asm.h>
-#include <regs.h>
-#include <vars.h>
+#include <iasm/asm.h>
+#include <iasm/regs.h>
+#include <iasm/vars.h>
+#include <iasm/setup.h>
 
 // stack and ram must be fixed
 uint8_t * exec_buffer  = (uint8_t *) EXEC_ADDRESS;
@@ -20,7 +21,12 @@ uint8_t * stack_buffer = (uint8_t *) STACK_ADDRESS;
 size_t exec_buffer_size = 0;
 size_t jmp_buffer_size = 0;
 
-int call_nasm() {
+int call_nasm(int * pipefd) {
+	int pipes[2];
+	if (pipe(pipes) == -1) {
+		return -1;
+	}
+
 	pid_t pid = fork();
 	if (pid == -1) {
 		return -1;
@@ -28,12 +34,21 @@ int call_nasm() {
 	if (pid == 0) {
 		close(0);
 		close(1);
-		close(2);
-		execl("/usr/bin/nasm", "nasm", "/tmp/.temp_asm.asm", "-o", "/tmp/.temp_output.bin", NULL);
+		dup2(pipes[1], 2);
+		close(pipes[0]);
+		close(pipes[1]);
+		execl("/usr/bin/nasm", "nasm", "-Xgnu", "-w+error", asm_src_path, "-o", asm_out_path, NULL);
 		exit(0);
 	}
 	int stat = 0;
 	waitpid(pid, &stat, 0);
+
+	if (pipefd) {
+		*pipefd = pipes[0];
+	} else {
+		close(pipes[0]);
+	}
+	close(pipes[1]);
 	return stat;
 }
 
@@ -53,6 +68,7 @@ void setup_registers() {
 
 	return_point = (uintptr_t) exec_buffer;
 	register_save.rsp = ((uintptr_t) stack_buffer) + STACK_SIZE;
+	setup_cpu();
 }
 
 uint64_t asm_execute(void * buffer, ssize_t size, int skip) {
@@ -90,9 +106,9 @@ void * asm_append_jmptable(void * symbol) {
 }
 
 void asm_reset() {
-	remove("/tmp/.temp_asm.asm");
+	remove(asm_src_path);
 
-	int fd = open("/tmp/.temp_asm.asm", O_CREAT | O_RDWR, 0664);
+	int fd = open(asm_src_path, O_CREAT | O_RDWR, 0664);
 	write(fd, "bits 64\norg 0x01000000\n", 23);
 	close(fd);
 
@@ -100,8 +116,12 @@ void asm_reset() {
 	setup_fpu();
 }
 
+void asm_cleanup() {
+	remove(asm_src_path);
+}
+
 void asm_rewind() {
-	int fd = open("/tmp/.temp_asm.asm", O_CREAT | O_RDWR, 0664);
+	int fd = open(asm_src_path, O_CREAT | O_RDWR, 0664);
 	ssize_t size = 0;
 	char c = 0;
 
@@ -119,22 +139,22 @@ void asm_rewind() {
 	close(fd);
 }
 
-int assemble(char * instruction, void ** buffer, ssize_t * size) {
+int assemble(char * instruction, void ** buffer, ssize_t * size, int * pipefd) {
 	int nasm_status = 0;
-	int fd = open("/tmp/.temp_asm.asm", O_CREAT | O_RDWR | O_APPEND, 0664);
+	int fd = open(asm_src_path, O_CREAT | O_RDWR | O_APPEND, 0664);
 	write(fd, instruction, strlen(instruction));
 	write(fd, "\n", 1);
 	close(fd);
 
-	nasm_status = call_nasm();
+	nasm_status = call_nasm(pipefd);
 
-	fd = open("/tmp/.temp_output.bin", O_RDONLY);
+	fd = open(asm_out_path, O_RDONLY);
 	*size = my_fdsize(fd) - exec_buffer_size;
 	*buffer = malloc(*size);
 	lseek(fd, exec_buffer_size, SEEK_SET);
 	read(fd, *buffer, *size);
 	close(fd);
 
-	remove("/tmp/.temp_output.bin");
+	remove(asm_out_path);
 	return nasm_status;
 }

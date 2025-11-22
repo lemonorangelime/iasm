@@ -1,10 +1,10 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <types.h>
-#include <arch.h>
-#include <floats.h>
-#include <asm.h>
+#include <iasm/types.h>
+#include <iasm/arch.h>
+#include <iasm/floats.h>
+#include <iasm/asm.h>
 
 int xmm_type = INT128;
 int ymm_type = INT256;

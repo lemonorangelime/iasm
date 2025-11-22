@@ -1,4 +1,4 @@
-#include <regs.h>
+#include <iasm/regs.h>
 
 int cpufeat_level = 0;
 

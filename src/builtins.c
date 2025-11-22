@@ -7,18 +7,18 @@
 #include <stddef.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <helpers.h>
+#include <iasm/helpers.h>
 #include <ctype.h>
-#include <builtins.h>
+#include <iasm/builtins.h>
 #include <stdio.h>
-#include <asm.h>
-#include <main.h>
-#include <version.h>
-#include <examiner.h>
-#include <dynamic.h>
-#include <types.h>
-#include <platform.h>
-#include <vmmode.h>
+#include <iasm/asm.h>
+#include <iasm/main.h>
+#include <iasm/version.h>
+#include <iasm/examiner.h>
+#include <iasm/dynamic.h>
+#include <iasm/types.h>
+#include <iasm/platform.h>
+#include <iasm/features.h>
 
 help_topic_t help_topics[];
 int topic_count;
@@ -143,7 +143,7 @@ int print_function(char * regname, char * type) {
 int assemble_function(char * instruction) {
 	void * buffer = NULL;
 	ssize_t size = 0;
-	int stat = assemble(instruction, &buffer, &size);
+	int stat = assemble(instruction, &buffer, &size, NULL);
 	asm_rewind();
 	if ((stat != 0) || (size <= 0)) {
 		puts("assembler error");
@@ -180,7 +180,7 @@ void fake_symbol_resolution(char * name, uintptr_t address) {
 
 	void * codebuffer = NULL;
 	ssize_t size = 0;
-        int stat = assemble(buffer, &codebuffer, &size);
+        int stat = assemble(buffer, &codebuffer, &size, NULL);
         if (size == -1 || stat != 0) {
                 asm_rewind();
                 return;
@@ -263,6 +263,8 @@ int execute_builtins(char * line) {
 		puts("zmm_type      |  set default type for zmm registers (zmm_type INT256/128/64/32/16/8 / FLOAT64/32/16/8)");
 		puts("dump_enable   |  enable function of `dump` command (general, xmm, ymm, zmm, fpu)");
 		puts("dump_disable  |  disable function of `dump` command (general, xmm, ymm, zmm, fpu)");
+		puts("feat_enable   |  enable feature (emulation)");
+		puts("feat_disable  |  disable feature (emulation)");
 		puts("print         |  print value of register (print xmm0 / print FLOAT64 xmm0)");
 		puts("x             |  examine memory (x/10xq 0x1234)");
 		puts("dump          |  print all registers");
@@ -370,6 +372,22 @@ int execute_builtins(char * line) {
 			return 0;
 		}
 		print_flags &= ~flag;
+		return 1;
+	}
+	if (sscanf(line, "feat_enable %s", buffer) > 0) {
+		int flag = decode_feature_flag(buffer);
+		if (flag == 0) {
+			return 0;
+		}
+		feature_flags |= flag;
+		return 1;
+	}
+	if (sscanf(line, "feat_disable %s", buffer) > 0) {
+		int flag = decode_feature_flag(buffer);
+		if (flag == 0) {
+			return 0;
+		}
+		feature_flags |= flag;
 		return 1;
 	}
 	if (strlen(line) > 9 && memcmp(line, "assemble ", 9) == 0) {

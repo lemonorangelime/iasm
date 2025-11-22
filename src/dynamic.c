@@ -1,6 +1,6 @@
-#include <dynamic.h>
+#include <iasm/dynamic.h>
 #include <limits.h>
-#include <linked.h>
+#include <iasm/linked.h>
 #include <stdlib.h>
 #include <string.h>
 #include <dlfcn.h>

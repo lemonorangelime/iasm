@@ -1,9 +1,13 @@
 build_*/
 build_*
+deprecated/
+deprecated
 bios/
 bios
 vm/
 vm
+zydis/
+zydis
 *.swp
 x86-iasm
 x86-iasm.gz

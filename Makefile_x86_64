@@ -6,6 +6,8 @@ ARCH := x86_64
 ASM_EXT := asm
 OUTPUT := $(ARCH)-iasm
 VM_LIB := vm/vm64.o
+ZYD_LIB := zydis/zydis64.o
+ZYD_INC := zydis/amalgamated-dist/
 
 BUILD_DIR := build_$(ARCH)
 
@@ -13,7 +15,7 @@ ASM := nasm
 ASMFLAGS := -f elf64 -I include/
 
 CC := gcc
-CCFLAGS := -rdynamic -flto -s -Oz -ftree-vectorize -fomit-frame-pointer -m64 -mhard-float -msse2 -fno-stack-protector -Iinclude -Ivm/include -Iarch/$(ARCH)/include -Wno-address-of-packed-member -z noexecstack -z noseparate-code
+CCFLAGS := -rdynamic -flto -s -Oz -ftree-vectorize -fomit-frame-pointer -m64 -mhard-float -msse2 -fno-stack-protector -Iinclude -Iarch/$(ARCH)/include -I$(ZYD_INC) -Wno-address-of-packed-member -z noexecstack -z noseparate-code
 
 LD := ld
 LDFLAGS := --strip-all --discard-all --discard-locals --strip-debug
@@ -44,7 +46,7 @@ $(BUILD_DIR)/%.$(ASM_EXT).o: arch/$(ARCH)/src/%.$(ASM_EXT)
 
 # $(VM_LIB)
 $(OUTPUT): $(OBJS) $(ASM_OBJS)
-	$(CC) $(CCFLAGS) $^ -o $@
+	$(CC) $(CCFLAGS) $^ $(ZYD_LIB) -o $@
 	# we need this information now
 	#objcopy --remove-section .note --remove-section .note.gnu.property --remove-section .note.ABI-tag --remove-section .hash --remove-section .gnu.hash --remove-section .gnu.version --remove-section .comment --remove-section .eh_frame_hdr --remove-section .eh_frame $@
 	strip --strip-unneeded --strip-debug --strip-section-headers $@

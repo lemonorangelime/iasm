@@ -1,14 +1,15 @@
-#include <examiner.h>
-#include <helpers.h>
+#include <iasm/examiner.h>
+#include <iasm/helpers.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <unistd.h>
-#include <floats.h>
-#include <signals.h>
-#include <asm.h>
+#include <iasm/floats.h>
+#include <iasm/signals.h>
+#include <iasm/asm.h>
+#include <iasm/disasm.h>
 
 static examine_type_t examiner_types[] = {
 //	{code, {"byte",  "word",    "dword",    "qword"}}
@@ -18,7 +19,8 @@ static examine_type_t examiner_types[] = {
 	{'o', {"0%.3o",  "0%.6o",   "0%.11o",   "0%.22llo"}},
 	{'c', {"'%c'",   "'%lc'",   "'%llc'",   "'%llc'"}},
 	{'b', {"0b%.8b", "0b%.16b", "0b%.32b",  "0b%.64llb"}},
-	{'f', {"%lf",	 "%lf",	    "%lf",	"%lf"}}
+	{'f', {"%lf",	 "%lf",	    "%lf",	"%lf"}},
+	{'i', {"%s",	 "%s",	    "%s",	"%s"}}
 };
 
 static int examiner_type_count = sizeof(examiner_types) / sizeof(examiner_types[0]);
@@ -131,25 +133,32 @@ int examine(char * line) {
 
 	char * specifier = examiner_type_specifier(type, size);
 	void * p = (void *) address;
-	int printed = printf("0x%.16llx: ", p);
+	int printed = (type == 'i') ? 0 : printf("0x%.16llx: ", p);
 	while (count--) {
-		uint64_t data = examiner_read(&p, size);
-		if (signaled) { // shit
-			return 1;
-		}
-		if (type == 'f') {
-			printed += print_float(data, size);
+		if (type == 'i') {
+			char s[16] = {0};
+			void * oldp = p;
+			p += disasm_one(p, s);
+			printf("0x%.16llx: %s\n", oldp, s);
 		} else {
-			printed += printf(specifier, data);
-		}
-		fflush(stdout);
-		putchar(count ? ' ' : 0);
-		fflush(stdout);
-		if ((printed > 80) && count) {
-			printed = 0;
-			write(1, "\n", 1);
-			printed += printf("0x%.16llx: ", p);
+			uint64_t data = examiner_read(&p, size);
+			if (signaled) { // shit
+				return 1;
+			}
+			if (type == 'f') {
+				printed += print_float(data, size);
+			} else {
+				printed += printf(specifier, data);
+			}
 			fflush(stdout);
+			putchar(count ? ' ' : 0);
+			fflush(stdout);
+			if ((printed > 80) && count) {
+				printed = 0;
+				write(1, "\n", 1);
+				printed += printf("0x%.16llx: ", p);
+				fflush(stdout);
+			}
 		}
 	}
 	write(1, "\n", !!printed);

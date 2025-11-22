@@ -2,9 +2,9 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <asm.h>
-#include <regs.h>
-#include <types.h>
+#include <iasm/asm.h>
+#include <iasm/regs.h>
+#include <iasm/types.h>
 
 // dont care calling these whatever
 char * regnames[] = {"none", "rax", "rbx", "rcx", "rdx", "rsp", "rbp", "rsi", "rdi", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "rflags", "rip"};

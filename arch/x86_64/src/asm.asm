@@ -37,6 +37,12 @@ sym r14_save, resq 1
 sym r15_save, resq 1
 sym rflags_save, resq 1
 sym return_point, resq 1
+sym cs_save, resw 1
+sym ds_save, resw 1
+sym ss_save, resw 1
+sym es_save, resw 1
+sym fs_save, resw 1
+sym gs_save, resw 1
 
 sym caller_register_save
 sym caller_rax_save, resq 1
@@ -56,6 +62,12 @@ sym caller_r13_save, resq 1
 sym caller_r14_save, resq 1
 sym caller_r15_save, resq 1
 sym caller_rflags_save, resq 1
+sym caller_cs_save, resw 1
+sym caller_ds_save, resw 1
+sym caller_ss_save, resw 1
+sym caller_es_save, resw 1
+sym caller_fs_save, resw 1
+sym caller_gs_save, resw 1
 
 sym temp_register_save
 sym temp_rax_save, resq 1
@@ -169,18 +181,35 @@ sym asm_resume
 	mov QWORD [rel caller_r13_save], r13
 	mov QWORD [rel caller_r14_save], r14
 	mov QWORD [rel caller_r15_save], r15
-
 	pushfq
 	pop rax
 	mov QWORD [rel caller_rflags_save], rax
-
 	call save_caller_fpu_state
+	mov ax, ds
+	mov WORD [rel caller_ds_save], ax
+	mov ax, ss
+	mov WORD [rel caller_ss_save], ax
+	mov ax, es
+	mov WORD [rel caller_es_save], ax
+	mov ax, fs
+	mov WORD [rel caller_fs_save], ax
+	mov ax, gs
+	mov WORD [rel caller_gs_save], ax
 
+	mov ax, [rel ds_save]
+	mov ds, ax
+	mov ax, [rel ss_save]
+	mov ss, ax
+	mov ax, [rel es_save]
+	mov es, ax
+	mov ax, [rel fs_save]
+	mov fs, ax
+	mov ax, [rel gs_save]
+	mov gs, ax
 	call restore_fpu_state
 	mov rax, [rel rflags_save]
 	push rax
 	popfq
-
 	mov rax, [rel rax_save]
 	mov rbx, [rel rbx_save]
 	mov rcx, [rel rcx_save]
@@ -217,22 +246,37 @@ sym asm_exit_context
 	mov QWORD [rel r13_save], r13
 	mov QWORD [rel r14_save], r14
 	mov QWORD [rel r15_save], r15
-
 	mov rsp, [rel caller_rsp_save]
-
 	pushfq
 	pop rax
 	mov QWORD [rel rflags_save], rax
-
 	call save_fpu_state
+	mov ax, ds
+	mov WORD [rel ds_save], ax
+	mov ax, ss
+	mov WORD [rel ss_save], ax
+	mov ax, es
+	mov WORD [rel es_save], ax
+	mov ax, fs
+	mov WORD [rel fs_save], ax
+	mov ax, gs
+	mov WORD [rel gs_save], ax
 
 sym reload_state
+	mov ax, [rel caller_ds_save]
+	mov ds, ax
+	mov ax, [rel caller_ss_save]
+	mov ss, ax
+	mov ax, [rel caller_es_save]
+	mov es, ax
+	mov ax, [rel caller_fs_save]
+	mov fs, ax
+	mov ax, [rel caller_gs_save]
+	mov gs, ax
+	call restore_caller_fpu_state
 	mov rax, [rel caller_rflags_save]
 	push rax
 	popfq
-
-	call restore_caller_fpu_state
-
 	mov rax, [rel caller_rax_save]
 	mov rbx, [rel caller_rbx_save]
 	mov rcx, [rel caller_rcx_save]
@@ -311,6 +355,19 @@ sym fpu_float_to_double
 	fld TWORD [rdi]
 	fstp QWORD [rel fpu_temp]
 	movsd xmm0, [rel fpu_temp]
+	ret
+
+sym setup_cpu
+	mov ax, ds
+	mov WORD [ds_save], ax
+	mov ax, ss
+	mov WORD [ss_save], ax
+	mov ax, es
+	mov WORD [es_save], ax
+	mov ax, fs
+	mov WORD [fs_save], ax
+	mov ax, gs
+	mov WORD [gs_save], ax
 	ret
 
 sym setup_fpu

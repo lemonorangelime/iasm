@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <regs.h>
+#include <iasm/regs.h>
 
 extern uint64_t return_point;
 extern uint8_t * exec_buffer;
@@ -17,11 +17,13 @@ void * asm_append_jmptable(void * symbol);
 void setup_executable_buffer();
 uint64_t asm_resume();
 uint64_t asm_execute(void * buffer, ssize_t size, int skip);
-int assemble(char * instruction, void ** buffer, ssize_t * size);
+int assemble(char * instruction, void ** buffer, ssize_t * size, int * pipefd);
 void asm_reset();
+void asm_cleanup();
 void reload_state();
 void temp_reload_state();
 void setup_fpu();
+void setup_cpu();
 double fpu_float_to_double(fpu_float_t * fpu_float);
 void asm_rewind();
 void asm_exit_context();
