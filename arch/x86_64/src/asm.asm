@@ -359,15 +359,15 @@ sym fpu_float_to_double
 
 sym setup_cpu
 	mov ax, ds
-	mov WORD [ds_save], ax
+	mov WORD [rel ds_save], ax
 	mov ax, ss
-	mov WORD [ss_save], ax
+	mov WORD [rel ss_save], ax
 	mov ax, es
-	mov WORD [es_save], ax
+	mov WORD [rel es_save], ax
 	mov ax, fs
-	mov WORD [fs_save], ax
+	mov WORD [rel fs_save], ax
 	mov ax, gs
-	mov WORD [gs_save], ax
+	mov WORD [rel gs_save], ax
 	ret
 
 sym setup_fpu

@@ -100,8 +100,9 @@ void * asm_append_jmptable(void * symbol) {
 void asm_reset() {
 	remove(asm_src_path);
 
+	char * header = "bits 32\ndefault abs\ncpu all\norg 0x7f000000\n";
 	int fd = open(asm_src_path, O_CREAT | O_RDWR, 0664);
-	write(fd, "bits 32\norg 0x01000000\n", 23);
+	write(fd, header, strlen(header));
 	close(fd);
 
 	setup_registers();

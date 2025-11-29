@@ -73,8 +73,8 @@ ssize_t read_input(char ** line, size_t * size) {
 int main(int argc, char * argv[]) {
 	char * line = NULL;
 	size_t line_size = 0;
-	setup();
 	register_handlers();
+	setup();
 	setup_executable_buffer();
 	asm_reset();
 	setup_builtins();

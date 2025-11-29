@@ -1,5 +1,6 @@
 #include <sys/io.h>
 #include <iasm/helpers.h>
+#include <iasm/setup.h>
 #include <time.h>
 #include <stdlib.h>
 
@@ -9,6 +10,8 @@ char asm_out_path[128];
 void setup() {
 	ioperm(0x0000, 0xffff, 1);
 	iopl(3);
+
+	arch_setup();
 
 	srandom(time(NULL));
 	tmpname(asm_src_path);

@@ -70,7 +70,7 @@ void signal_handler(int signum, siginfo_t * info, ucontext_t * context) {
 	uintptr_t * pc = (uintptr_t *) &context->uc_mcontext.gregs[REG_PC];
 	contextual_signal(signum, (void *) signal_handler);
 
-	if ((feature_flags & TRAP_EMULATION) && context_switching && attempt_emulation(context->uc_mcontext.gregs)) {
+	if ((feature_flags & TRAP_EMULATION) && attempt_emulation(context->uc_mcontext.gregs)) {
 		return; // emulate if enabled and only if context switching, otherwise continue handling
 	}
 
