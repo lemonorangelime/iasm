@@ -6,7 +6,7 @@ char * nasm_buffer_cut(int * read, char * buffer) {
 	char * src = asm_src_path;
 	while (--*read && *p++ == *src++) {}
 	while (--*read && *p++ != ':') {}
-	if (!*read) {
+	if (*read <= 0) {
 		return p;
 	}
 	p++;
