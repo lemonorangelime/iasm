@@ -7,6 +7,10 @@ bits 64
 
 extern memcpy
 
+section .data
+
+sym memcpy_address, dq memcpy
+
 section .bss
 
 align 64
@@ -323,7 +327,7 @@ sym safe_memcpy
 	mov rax, QWORD [rel temp_rax_save]
 	mov rdx, QWORD [rel temp_rdx_save]
 
-	call memcpy
+	call [rel memcpy_address]
 
 sym temp_reload_state
 	mov rax, [rel temp_rflags_save]

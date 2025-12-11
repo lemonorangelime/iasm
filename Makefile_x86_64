@@ -33,7 +33,7 @@ mkdir:
 	mkdir -p ${BUILD_DIR}
 
 clean:
-	rm -rf ${BUILD_DIR} ${OUTPUT} ${OUTPUT}.gz
+	rm -rf ${BUILD_DIR} ${OUTPUT} ${OUTPUT}.gz ${OUTPUT}.xz
 
 $(BUILD_DIR)/%.c.o: src/%.c
 	$(CC) $(CCFLAGS) $^ -c -o $@
@@ -51,6 +51,7 @@ $(OUTPUT): $(OBJS) $(ASM_OBJS)
 	#objcopy --remove-section .note --remove-section .note.gnu.property --remove-section .note.ABI-tag --remove-section .hash --remove-section .gnu.hash --remove-section .gnu.version --remove-section .comment --remove-section .eh_frame_hdr --remove-section .eh_frame $@
 	strip --strip-unneeded --strip-debug --strip-section-headers $@
 	gzip -fqk9 $@
+	xz -fqk9 $@
 
 # "iasm" seems to be a pretty common name
 install: $(OUTPUT)
