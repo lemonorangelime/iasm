@@ -10,6 +10,8 @@ extern memcpy
 section .data
 
 sym memcpy_address, dq memcpy
+align 16
+sym mxcsr_fixup, dd 0x1f80
 
 section .bss
 
@@ -101,8 +103,8 @@ sym fxsave_supported, resd 1
 section .text
 
 sym save_caller_fpu_state
-	mov rax, 0xffffffffffffffff
-	mov rdx, 0xffffffffffffffff
+	mov eax, 0x7fffffff
+	mov edx, 0x7fffffff
 	cmp DWORD [rel xsave_supported], 0
 	je .fxsave
 	xsave [rel caller_fpu_save]
@@ -112,8 +114,8 @@ sym save_caller_fpu_state
 	ret
 
 sym restore_caller_fpu_state
-	mov rax, 0xffffffffffffffff
-	mov rdx, 0xffffffffffffffff
+	mov eax, 0x7fffffff
+	mov edx, 0x7fffffff
 	cmp DWORD [rel xsave_supported], 0
 	je .fxrstor
 	xrstor [rel caller_fpu_save]
@@ -123,8 +125,8 @@ sym restore_caller_fpu_state
 	ret
 
 sym save_temp_fpu_state
-	mov rax, 0xffffffffffffffff
-	mov rdx, 0xffffffffffffffff
+	mov eax, 0x7fffffff
+	mov edx, 0x7fffffff
 	cmp DWORD [rel xsave_supported], 0
 	je .fxsave
 	xsave [rel temp_fpu_save]
@@ -134,8 +136,8 @@ sym save_temp_fpu_state
 	ret
 
 sym restore_temp_fpu_state
-	mov rax, 0xffffffffffffffff
-	mov rdx, 0xffffffffffffffff
+	mov eax, 0x7fffffff
+	mov edx, 0x7fffffff
 	cmp DWORD [rel xsave_supported], 0
 	je .fxrstor
 	xrstor [rel temp_fpu_save]
@@ -145,8 +147,8 @@ sym restore_temp_fpu_state
 	ret
 
 sym save_fpu_state
-	mov rax, 0xffffffffffffffff
-	mov rdx, 0xffffffffffffffff
+	mov eax, 0x7fffffff
+	mov edx, 0x7fffffff
 	cmp DWORD [rel xsave_supported], 0
 	je .fxsave
 	xsave [rel fpu_save]
@@ -156,8 +158,8 @@ sym save_fpu_state
 	ret
 
 sym restore_fpu_state
-	mov rax, 0xffffffffffffffff
-	mov rdx, 0xffffffffffffffff
+	mov eax, 0x7fffffff
+	mov edx, 0x7fffffff
 	cmp DWORD [rel xsave_supported], 0
 	je .fxrstor
 	xrstor [rel fpu_save]
@@ -362,6 +364,7 @@ sym fpu_float_to_double
 	ret
 
 sym setup_cpu
+	push ax
 	mov ax, ds
 	mov WORD [rel ds_save], ax
 	mov ax, ss
@@ -372,6 +375,7 @@ sym setup_cpu
 	mov WORD [rel fs_save], ax
 	mov ax, gs
 	mov WORD [rel gs_save], ax
+	pop ax
 	ret
 
 sym setup_fpu
@@ -392,6 +396,7 @@ sym setup_fpu
 	call save_caller_fpu_state
 	call restore_fpu_state
 	finit
+	ldmxcsr [mxcsr_fixup]
 	call save_fpu_state
 	call restore_caller_fpu_state
 	pop rdx
