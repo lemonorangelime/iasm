@@ -18,7 +18,7 @@ depends:
 	cd ..;
 
 clean:
-	rm -rf ./vm/
+	rm -rf ./zydis/amalgamated-dist/
 	make -f Makefile_x86_64 clean
 	make -f Makefile_x86 clean
 

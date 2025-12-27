@@ -208,10 +208,12 @@ sym asm_resume
 	mov ss, ax
 	mov ax, [rel es_save]
 	mov es, ax
-	mov ax, [rel fs_save]
-	mov fs, ax
-	mov ax, [rel gs_save]
-	mov gs, ax
+	; /* not possible on newer kernels, removing this entirely allows crashes
+	;    on older kernels, but that was never a big deal anyway */
+	; mov ax, [rel fs_save]
+	; mov fs, ax
+	; mov ax, [rel gs_save]
+	; mov gs, ax
 	call restore_fpu_state
 	mov rax, [rel rflags_save]
 	push rax
@@ -275,10 +277,11 @@ sym reload_state
 	mov ss, ax
 	mov ax, [rel caller_es_save]
 	mov es, ax
-	mov ax, [rel caller_fs_save]
-	mov fs, ax
-	mov ax, [rel caller_gs_save]
-	mov gs, ax
+	; /* not possible on newer kernels (see line 211) */
+	; mov ax, [rel caller_fs_save]
+	; mov fs, ax
+	; mov ax, [rel caller_gs_save]
+	; mov gs, ax
 	call restore_caller_fpu_state
 	mov rax, [rel caller_rflags_save]
 	push rax
