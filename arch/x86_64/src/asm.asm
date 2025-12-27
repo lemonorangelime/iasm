@@ -396,7 +396,7 @@ sym setup_fpu
 	call save_caller_fpu_state
 	call restore_fpu_state
 	finit
-	ldmxcsr [mxcsr_fixup]
+	ldmxcsr [rel mxcsr_fixup]	; seriously? come on
 	call save_fpu_state
 	call restore_caller_fpu_state
 	pop rdx
