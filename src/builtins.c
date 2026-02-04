@@ -19,6 +19,7 @@
 #include <iasm/types.h>
 #include <iasm/platform.h>
 #include <iasm/features.h>
+#include <iasm/checkpoints.h>
 
 help_topic_t help_topics[];
 int topic_count;
@@ -266,6 +267,8 @@ int execute_builtins(char * line) {
 		puts("feat_enable   |  enable feature (emulation)");
 		puts("feat_disable  |  disable feature (emulation)");
 		puts("print         |  print value of register (print xmm0 / print FLOAT64 xmm0)");
+		puts("rewind        |  rewind to previous checkpoint");
+		puts("advance       |  advance to next checkpoint");
 		puts("x             |  examine memory (x/10xq 0x1234)");
 		puts("dump          |  print all registers");
 		puts("exit          |  exit program");
@@ -305,6 +308,16 @@ int execute_builtins(char * line) {
 		linking_allowed = 0;
 		vmmode_init();
 		return 1; */
+	}
+	if (strcmp(line, "rewind") == 0) {
+		printf("Time traveling backwards...\n");
+		checkpoint_rewind();
+		return 1;
+	}
+	if (strcmp(line, "advance") == 0) {
+		printf("Time traveling forwards...\n");
+		checkpoint_wind();
+		return 1;
 	}
 	if ((sscanf(line, "externf %s%s%s", buffer, buffer2, buffer3) > 0) || (sscanf(line, "extern %s%s%s", buffer, buffer2, buffer3) > 0)) {
 		if (!linking_allowed) {

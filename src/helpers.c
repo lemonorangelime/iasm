@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <iasm/regs.h>
 #include <iasm/asm.h>
+#include <iasm/setup.h>
 
 char * file_charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 void tmpname(char * path) {
@@ -27,6 +28,38 @@ ssize_t my_fdsize(int fd) {
 	ssize_t end = lseek(fd, 0, SEEK_END);
 	lseek(fd, cur, SEEK_SET);
 	return end;
+}
+
+ssize_t asm_src_fdsize() {
+	int fd = open(asm_src_path, O_RDWR, 0664);
+	if (!fd) {
+		return 0;
+	}
+	ssize_t size = my_fdsize(fd);
+	close(fd);
+	return size;
+}
+
+void asm_src_readall(void * p) {
+	int fd = open(asm_src_path, O_RDWR, 0664);
+	if (!fd) {
+		return;
+	}
+	ssize_t size = my_fdsize(fd);
+	read(fd, p, size);
+	close(fd);
+}
+
+void asm_src_writeall(void * p, size_t size) {
+	int fd = open(asm_src_path, O_RDWR, 0664);
+	if (!fd) {
+		return;
+	}
+	lseek(fd, 0, SEEK_SET);
+	ftruncate(fd, size);
+	lseek(fd, 0, SEEK_SET);
+	write(fd, p, size);
+	close(fd);
 }
 
 int resolve_label(char * label, uintptr_t * p) {

@@ -37,7 +37,7 @@ int call_nasm(int * pipefd) {
 		dup2(pipes[1], 2);
 		close(pipes[0]);
 		close(pipes[1]);
-		execl("/usr/bin/nasm", "nasm", "-Xgnu", "-w+error", asm_src_path, "-o", asm_out_path, NULL);
+		execl("/usr/bin/nasm", "nasm", "-Xgnu", "-w+error", "-w-error=zeroing", asm_src_path, "-o", asm_out_path, NULL);
 		exit(0);
 	}
 	int stat = 0;
@@ -158,4 +158,16 @@ int assemble(char * instruction, void ** buffer, ssize_t * size, int * pipefd) {
 
 	remove(asm_out_path);
 	return nasm_status;
+}
+
+void arch_save_registers(void * regsave) {
+	uintptr_t register_size = (uintptr_t) (((uintptr_t) (void*) &register_save_end) - ((uintptr_t) (void*) &register_save));
+	memcpy(regsave, &register_save, register_size);
+	memcpy(regsave + 512, (void *) &fpu_save, 4096);
+}
+
+void arch_load_registers(void * regsave) {
+	uintptr_t register_size = (uintptr_t) (((uintptr_t) (void*) &register_save_end) - ((uintptr_t) (void*) &register_save));
+	memcpy(&register_save, regsave, register_size);
+	memcpy((void *) &fpu_save, regsave + 512, 4096);
 }

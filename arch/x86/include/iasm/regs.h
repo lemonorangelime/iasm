@@ -108,6 +108,7 @@ extern char * regnames[];
 extern char * fpuregnames[];
 extern registers_t register_save;
 extern fpu_registers_t fpu_save;
+extern uint8_t register_save_end;
 extern int xmm_type;
 extern int ymm_type;
 extern int zmm_type;

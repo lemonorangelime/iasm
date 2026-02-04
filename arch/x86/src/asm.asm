@@ -40,6 +40,7 @@ sym ss_save, resw 1
 sym es_save, resw 1
 sym fs_save, resw 1
 sym gs_save, resw 1
+sym register_save_end
 
 sym caller_register_save
 sym caller_eax_save, resd 1
