@@ -63,4 +63,4 @@ install: $(OUTPUT)
 	fi
 
 uninstall:
-	rm $(PREFIX)/bin/$(OUTPUT)
+	rm -f $(PREFIX)/bin/$(OUTPUT)
