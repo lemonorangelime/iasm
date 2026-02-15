@@ -1,7 +1,6 @@
 // todo: break this up
 
 #include <iasm/helpers.h>
-#include <sys/mman.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -9,6 +8,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sys/mman.h>
 #include <iasm/asm.h>
 #include <iasm/regs.h>
 #include <iasm/vars.h>
@@ -53,9 +53,9 @@ int call_nasm(int * pipefd) {
 }
 
 void setup_executable_buffer() {
-	exec_buffer = (uint8_t *) mmap(exec_buffer, EXEC_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0); // whatever :shrug:
-	jmp_buffer = (uint8_t *) mmap(jmp_buffer, JMP_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0); // whatever :shrug:
-	stack_buffer = (uint8_t *) mmap(stack_buffer, STACK_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0); // executable stack because yeah
+	exec_buffer = (uint8_t *) mmap(NULL, EXEC_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	jmp_buffer = (uint8_t *) mmap(NULL, JMP_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	stack_buffer = (uint8_t *) mmap(NULL, STACK_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	return_point = (uintptr_t) exec_buffer;
 }
 

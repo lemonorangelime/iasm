@@ -1,3 +1,4 @@
+
 bits 64
 
 %macro sym 1-2
@@ -12,15 +13,34 @@ section .data
 sym memcpy_address, dq memcpy
 align 16
 sym mxcsr_fixup, dd 0x1f80
+align 32
+sym tile_cfg, times 512 db 0
+align 128
+sym tile_save
+sym tile0_save, times 1024 db 0
+align 128
+sym tile1_save, times 1024 db 0
+align 128
+sym tile2_save, times 1024 db 0
+align 128
+sym tile3_save, times 1024 db 0
+align 128
+sym tile4_save, times 1024 db 0
+align 128
+sym tile5_save, times 1024 db 0
+align 128
+sym tile6_save, times 1024 db 0
+align 128
+sym tile7_save, times 1024 db 0
 
 section .bss
 
 align 64
-sym fpu_save, resb 4096
+sym fpu_save, resb 16384
 align 64
-sym caller_fpu_save, resb 4096
+sym caller_fpu_save, resb 16384
 align 64
-sym temp_fpu_save, resb 4096
+sym temp_fpu_save, resb 16384
 align 16
 sym fpu_temp, resq 1
 
@@ -41,6 +61,22 @@ sym r12_save, resq 1
 sym r13_save, resq 1
 sym r14_save, resq 1
 sym r15_save, resq 1
+sym r16_save, resq 1
+sym r17_save, resq 1
+sym r18_save, resq 1
+sym r19_save, resq 1
+sym r20_save, resq 1
+sym r21_save, resq 1
+sym r22_save, resq 1
+sym r23_save, resq 1
+sym r24_save, resq 1
+sym r25_save, resq 1
+sym r26_save, resq 1
+sym r27_save, resq 1
+sym r28_save, resq 1
+sym r29_save, resq 1
+sym r30_save, resq 1
+sym r31_save, resq 1
 sym rflags_save, resq 1
 sym return_point, resq 1
 sym cs_save, resw 1
@@ -100,6 +136,8 @@ sym temp_context_switching, resd 1
 
 sym xsave_supported, resd 1
 sym fxsave_supported, resd 1
+sym tile_supported, resd 1
+sym apx_supported, resd 1
 
 section .text
 
@@ -148,6 +186,26 @@ sym restore_temp_fpu_state
 	ret
 
 sym save_fpu_state
+	cmp DWORD [rel tile_supported], 0
+	je .no_tile
+	sttilecfg [rel tile_cfg]
+	lea rax, [rel tile0_save]
+	tilestored [rax], tmm0
+	lea rax, [rel tile1_save]
+	tilestored [rax], tmm1
+	lea rax, [rel tile2_save]
+	tilestored [rax], tmm2
+	lea rax, [rel tile3_save]
+	tilestored [rax], tmm3
+	lea rax, [rel tile4_save]
+	tilestored [rax], tmm4
+	lea rax, [rel tile5_save]
+	tilestored [rax], tmm5
+	lea rax, [rel tile6_save]
+	tilestored [rax], tmm6
+	lea rax, [rel tile7_save]
+	tilestored [rax], tmm7
+.no_tile:
 	mov eax, 0x7fffffff
 	mov edx, 0x7fffffff
 	cmp DWORD [rel xsave_supported], 0
@@ -164,10 +222,76 @@ sym restore_fpu_state
 	cmp DWORD [rel xsave_supported], 0
 	je .fxrstor
 	xrstor [rel fpu_save]
-	ret
+	jmp .continue
 .fxrstor:
 	fxrstor [rel fpu_save]
+.continue:
+	cmp DWORD [rel tile_supported], 0
+	je .no_tile
+	ldtilecfg [rel tile_cfg]
+	lea rax, [rel tile0_save]
+	tileloadd tmm0, [rax]
+	lea rax, [rel tile1_save]
+	tileloadd tmm1, [rax]
+	lea rax, [rel tile2_save]
+	tileloadd tmm2, [rax]
+	lea rax, [rel tile3_save]
+	tileloadd tmm3, [rax]
+	lea rax, [rel tile4_save]
+	tileloadd tmm4, [rax]
+	lea rax, [rel tile5_save]
+	tileloadd tmm5, [rax]
+	lea rax, [rel tile6_save]
+	tileloadd tmm6, [rax]
+	lea rax, [rel tile7_save]
+	tileloadd tmm7, [rax]
+.no_tile:
 	ret
+
+sym save_apx_state
+	cmp DWORD [rel apx_supported], 0
+	je .no_apx
+	mov QWORD [rel r16_save], r16
+	mov QWORD [rel r17_save], r17
+	mov QWORD [rel r18_save], r18
+	mov QWORD [rel r19_save], r19
+	mov QWORD [rel r20_save], r20
+	mov QWORD [rel r21_save], r21
+	mov QWORD [rel r22_save], r22
+	mov QWORD [rel r23_save], r23
+	mov QWORD [rel r24_save], r24
+	mov QWORD [rel r25_save], r25
+	mov QWORD [rel r26_save], r26
+	mov QWORD [rel r27_save], r27
+	mov QWORD [rel r28_save], r28
+	mov QWORD [rel r29_save], r29
+	mov QWORD [rel r30_save], r30
+	mov QWORD [rel r31_save], r31
+.no_apx:
+	ret
+
+sym restore_apx_state
+	cmp DWORD [rel apx_supported], 0
+	je .no_apx
+	mov r16, [rel r16_save]
+	mov r17, [rel r17_save]
+	mov r18, [rel r18_save]
+	mov r19, [rel r19_save]
+	mov r20, [rel r20_save]
+	mov r21, [rel r21_save]
+	mov r22, [rel r22_save]
+	mov r23, [rel r23_save]
+	mov r24, [rel r24_save]
+	mov r25, [rel r25_save]
+	mov r26, [rel r26_save]
+	mov r27, [rel r27_save]
+	mov r28, [rel r28_save]
+	mov r29, [rel r29_save]
+	mov r30, [rel r30_save]
+	mov r31, [rel r31_save]
+.no_apx:
+	ret
+
 
 ; close your eyes
 sym asm_resume
@@ -203,18 +327,13 @@ sym asm_resume
 	mov ax, gs
 	mov WORD [rel caller_gs_save], ax
 
+	call restore_apx_state
 	mov ax, [rel ds_save]
 	mov ds, ax
 	mov ax, [rel ss_save]
 	mov ss, ax
 	mov ax, [rel es_save]
 	mov es, ax
-	; /* not possible on newer kernels, removing this entirely allows crashes
-	;    on older kernels, but that was never a big deal anyway */
-	; mov ax, [rel fs_save]
-	; mov fs, ax
-	; mov ax, [rel gs_save]
-	; mov gs, ax
 	call restore_fpu_state
 	mov rax, [rel rflags_save]
 	push rax
@@ -259,6 +378,7 @@ sym asm_exit_context
 	pushfq
 	pop rax
 	mov QWORD [rel rflags_save], rax
+	call save_apx_state
 	call save_fpu_state
 	mov ax, ds
 	mov WORD [rel ds_save], ax
@@ -368,7 +488,10 @@ sym fpu_float_to_double
 	ret
 
 sym setup_cpu
-	push ax
+	push rax
+	push rbx
+	push rcx
+	push rdx
 	mov ax, ds
 	mov WORD [rel ds_save], ax
 	mov ax, ss
@@ -379,7 +502,18 @@ sym setup_cpu
 	mov WORD [rel fs_save], ax
 	mov ax, gs
 	mov WORD [rel gs_save], ax
-	pop ax
+
+	mov eax, 7
+	mov ecx, 1
+	cpuid
+	test edx, 1 << 21
+	jz .no_apx
+	mov DWORD [rel apx_supported], 1
+.no_apx:
+	pop rdx
+	pop rcx
+	pop rbx
+	pop rax
 	ret
 
 sym setup_fpu
@@ -389,6 +523,7 @@ sym setup_fpu
 	push rdx
 
 	mov DWORD [rel xsave_supported], 0
+	mov DWORD [rel tile_supported], 0
 	mov DWORD [rel fxsave_supported], 1 ; YES
 
 	mov eax, 0x01
@@ -403,6 +538,32 @@ sym setup_fpu
 	ldmxcsr [rel mxcsr_fixup]	; seriously? come on
 	call save_fpu_state
 	call restore_caller_fpu_state
+
+
+
+	xor rcx, rcx
+	mov rax, 0x07
+	cpuid
+	test edx, 1 << 24
+	jz .no_tile
+
+	mov BYTE [rel tile_cfg], 1
+	mov WORD [rel tile_cfg + 0x10], 0x40
+	mov WORD [rel tile_cfg + 0x12], 0x40
+	mov WORD [rel tile_cfg + 0x14], 0x40
+	mov WORD [rel tile_cfg + 0x16], 0x40
+	mov WORD [rel tile_cfg + 0x18], 0x40
+	mov WORD [rel tile_cfg + 0x1a], 0x40
+	mov WORD [rel tile_cfg + 0x1c], 0x40
+	mov WORD [rel tile_cfg + 0x1e], 0x40
+	mov rax, 0x1010101010101010
+	mov QWORD [rel tile_cfg + 0x30], rax
+	mov DWORD [rel tile_supported], 1
+	ldtilecfg [rel tile_cfg]
+.no_tile:
+
+
+
 	pop rdx
 	pop rcx
 	pop rbx

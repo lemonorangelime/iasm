@@ -1,11 +1,16 @@
 #pragma once
 
 #include <stdint.h>
+#include <stddef.h>
+#include <sys/types.h>
 #include <iasm/regs.h>
 
 extern uint64_t return_point;
+
 extern uint8_t * exec_buffer;
+extern uint8_t * jmp_buffer;
 extern uint8_t * stack_buffer;
+
 extern size_t exec_buffer_size;
 extern int context_switching;
 extern int temp_context_switching;

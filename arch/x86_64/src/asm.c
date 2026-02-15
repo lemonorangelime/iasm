@@ -1,6 +1,5 @@
 // todo: break this up
 
-#include <iasm/helpers.h>
 #include <sys/mman.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,10 +8,13 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <iasm/helpers.h>
 #include <iasm/asm.h>
 #include <iasm/regs.h>
 #include <iasm/vars.h>
 #include <iasm/setup.h>
+
+#include <stddef.h>
 
 // stack and ram must be fixed
 uint8_t * exec_buffer  = (uint8_t *) EXEC_ADDRESS;
@@ -20,6 +22,8 @@ uint8_t * jmp_buffer  = (uint8_t *) JMP_ADDRESS;
 uint8_t * stack_buffer = (uint8_t *) STACK_ADDRESS;
 size_t exec_buffer_size = 0;
 size_t jmp_buffer_size = 0;
+
+extern uint8_t tile_cfg;
 
 int call_nasm(int * pipefd) {
 	int pipes[2];
@@ -37,7 +41,7 @@ int call_nasm(int * pipefd) {
 		dup2(pipes[1], 2);
 		close(pipes[0]);
 		close(pipes[1]);
-		execl("/usr/bin/nasm", "nasm", "-Xgnu", "-w+error", "-w-error=zeroing", asm_src_path, "-o", asm_out_path, NULL);
+		execl("/usr/bin/nasm", "nasm", "-Xgnu", "-w+error", "-w-error=zeroing", "-w-zeroing", asm_src_path, "-o", asm_out_path, NULL);
 		exit(0);
 	}
 	int stat = 0;
@@ -108,7 +112,9 @@ void * asm_append_jmptable(void * symbol) {
 void asm_reset() {
 	remove(asm_src_path);
 
-	char * header = "bits 64\ndefault abs\ncpu all\norg 0x7f000000\n";
+	char header[128] = {0};
+	snprintf(header, 128, "bits 64\ndefault abs\ncpu all\norg %p\n", (uintptr_t) exec_buffer);
+
 	int fd = open(asm_src_path, O_CREAT | O_RDWR, 0664);
 	write(fd, header, strlen(header));
 	close(fd);
@@ -163,11 +169,11 @@ int assemble(char * instruction, void ** buffer, ssize_t * size, int * pipefd) {
 void arch_save_registers(void * regsave) {
 	uintptr_t register_size = (uintptr_t) (((uintptr_t) (void*) &register_save_end) - ((uintptr_t) (void*) &register_save));
 	memcpy(regsave, &register_save, register_size);
-	memcpy(regsave + 512, (void *) &fpu_save, 4096);
+	memcpy(regsave + 512, (void *) &fpu_save, 16384);
 }
 
 void arch_load_registers(void * regsave) {
 	uintptr_t register_size = (uintptr_t) (((uintptr_t) (void*) &register_save_end) - ((uintptr_t) (void*) &register_save));
 	memcpy(&register_save, regsave, register_size);
-	memcpy((void *) &fpu_save, regsave + 512, 4096);
+	memcpy((void *) &fpu_save, regsave + 512, 16384);
 }

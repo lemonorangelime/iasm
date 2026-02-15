@@ -39,9 +39,40 @@ typedef struct {
 	uint64_t r13;
 	uint64_t r14;
 	uint64_t r15;
+	uint64_t r16;
+	uint64_t r17;
+	uint64_t r18;
+	uint64_t r19;
+	uint64_t r20;
+	uint64_t r21;
+	uint64_t r22;
+	uint64_t r23;
+	uint64_t r24;
+	uint64_t r25;
+	uint64_t r26;
+	uint64_t r27;
+	uint64_t r28;
+	uint64_t r29;
+	uint64_t r30;
+	uint64_t r31;
 	uint64_t rflags;
 	uint64_t rip;
 } __attribute__((packed)) registers_t;
+
+typedef struct {
+	uint16_t d[512];
+} __attribute__((packed)) tile_register_t;
+
+typedef struct {
+	tile_register_t tmm0;
+	tile_register_t tmm1;
+	tile_register_t tmm2;
+	tile_register_t tmm3;
+	tile_register_t tmm4;
+	tile_register_t tmm5;
+	tile_register_t tmm6;
+	tile_register_t tmm7;
+} __attribute__((packed)) tile_save_t;
 
 typedef struct {
 	uint16_t fcw;
@@ -93,7 +124,7 @@ typedef struct {
 	xmm_float_t ymm13_high;
 	xmm_float_t ymm14_high;
 	xmm_float_t ymm15_high;
-	char padding[0x40];
+	char padding[0x140];
 	ymm_float_t zmm0_high;
 	ymm_float_t zmm1_high;
 	ymm_float_t zmm2_high;
@@ -116,11 +147,18 @@ extern char * regnames[];
 extern char * fpuregnames[];
 extern registers_t register_save;
 extern fpu_registers_t fpu_save;
+extern tile_save_t tile_save;
 extern uint8_t register_save_end;
 extern int xmm_type;
 extern int ymm_type;
 extern int zmm_type;
+extern int tmm_type;
 extern uint16_t print_flags;
+
+enum {
+	FPU_MODE_FPU,
+	FPU_MODE_MMX,
+};
 
 enum {
 	PRINT_GENERAL	= 0b00000001,
@@ -128,17 +166,21 @@ enum {
 	PRINT_YMM	= 0b00000100,
 	PRINT_FPU	= 0b00001000,
 	PRINT_ZMM	= 0b00010000,
+	PRINT_TMM	= 0b00100000,
 };
 
 void print_xmm(void * p, int as);
 void print_ymm(void * p, int as);
 void print_zmm(void * p, int as);
+void print_tmm(void * p, int as);
 void dump_registers();
 void * lookup_register(char * name);
 uint64_t lookup_register_mask(char * name);
 int lookup_register_type(char * name);
 int lookup_register_size(char * name);
 fpu_float_t * lookup_fpuregister(char * name);
+double * lookup_mmxregister(char * name);
 xmm_float_t * lookup_xmmregister(char * name);
 ymm_float_t * lookup_ymmregister(char * name);
 zmm_float_t * lookup_zmmregister(char * name);
+tile_register_t * lookup_tmmregister(char * name);

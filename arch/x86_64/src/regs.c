@@ -2,32 +2,48 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stddef.h>
 #include <iasm/asm.h>
 #include <iasm/regs.h>
 #include <iasm/types.h>
 
 // dont care calling these whatever
-char * regnames[] = {"none", "rax", "rbx", "rcx", "rdx", "rsp", "rbp", "rsi", "rdi", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "rflags", "rip"};
-char * reg32names[] = {"none", "eax", "ebx", "ecx", "edx", "esp", "ebp", "esi", "edi", "r8d", "r9d", "r10d", "r11d", "r12d", "r13d", "r14d", "r15d", "eflags", "eip"};
-char * reg16names[] = {"none", "ax", "bx", "cx", "dx", "sp", "bp", "si", "di", "r8w", "r9w", "r10w", "r11w", "r12w", "r13w", "r14w", "r15w", "flags", "ip"};
-char * reg8lnames[] = {"none", "al", "bl", "cl", "dl", "spl", "bpl", "sil", "dil", "r8b", "r9b", "r10b", "r11b", "r12b", "r13b", "r14b", "r15b", "flagsl", "ipl"};
-char * reg8hnames[] = {"none", "ah", "bh", "ch", "dh", "sph", "bph", "sih", "dih", "r8bh", "r9bh", "r10bh", "r11bh", "r12bh", "r13bh", "r14bh", "r15bh", "flagsh", "iph"};
-char * fpuregnames[] = {"none", "st0", "st1", "st2", "st3", "st4", "st5", "st6", "st7"};
+char * regnames[] = {"none", "rax", "rbx", "rcx", "rdx", "rsp", "rbp", "rsi", "rdi", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "r16", "r17", "r18", "r19", "r20", "r21", "r22", "r23", "r24", "r25", "r26", "r27", "r28", "r29", "r30", "r31", "rflags", "rip"};
+char * reg32names[] = {"none", "eax", "ebx", "ecx", "edx", "esp", "ebp", "esi", "edi", "r8d", "r9d", "r10d", "r11d", "r12d", "r13d", "r14d", "r15d", "r16d", "r17d", "r18d", "r19d", "r20d", "r21d", "r22d", "r23d", "r24d", "r25d", "r26d", "r27d", "r28d", "r29d", "r30d", "r31d", "eflags", "eip"};
+char * reg16names[] = {"none", "ax", "bx", "cx", "dx", "sp", "bp", "si", "di", "r8w", "r9w", "r10w", "r11w", "r12w", "r13w", "r14w", "r15w", "r16w", "r17w", "r18w", "r19w", "r20w", "r21w", "r22w", "r23w", "r24w", "r25w", "r26w", "r27w", "r28w", "r29w", "r30w", "r31w", "flags", "ip"};
+char * reg8lnames[] = {"none", "al", "bl", "cl", "dl", "spl", "bpl", "sil", "dil", "r8b", "r9b", "r10b", "r11b", "r12b", "r13b", "r14b", "r15b", "r16b", "r17b", "r18b", "r19b", "r20b", "r21b", "r22b", "r23b", "r24b", "r25b", "r26b", "r27b", "r28b", "r29b", "r30b", "r31b", "flagsl", "ipl"};
+char * reg8hnames[] = {"none", "ah", "bh", "ch", "dh", "sph", "bph", "sih", "dih", "r8bh", "r9bh", "r10bh", "r11bh", "r12bh", "r13bh", "r14bh", "r15bh", "r16bh", "r17bh", "r18bh", "r19bh", "r20bh", "r21bh", "r22bh", "r23bh", "r24bh", "r25bh", "r26bh", "r27bh", "r28bh", "r29bh", "r30bh", "r31bh", "flagsh", "iph"};
 char * fpuctrlnames[] = {"none", "fcw", "fsw", "ftw", "fop"};
+char * fpuregnames[] = {"none", "st0", "st1", "st2", "st3", "st4", "st5", "st6", "st7"};
+char * mmxregnames[] = {"none", "mm0", "mm1", "mm2", "mm3", "mm4", "mm5", "mm6", "mm7"};
 char * xmmregnames[] = {"none", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7", "xmm8", "xmm9", "xmm10", "xmm11", "xmm12", "xmm13", "xmm14", "xmm15"};
 char * ymmregnames[] = {"none", "ymm0", "ymm1", "ymm2", "ymm3", "ymm4", "ymm5", "ymm6", "ymm7", "ymm8", "ymm9", "ymm10", "ymm11", "ymm12", "ymm13", "ymm14", "ymm15"};
 char * zmmregnames[] = {"none", "zmm0", "zmm1", "zmm2", "zmm3", "zmm4", "zmm5", "zmm6", "zmm7", "zmm8", "zmm9", "zmm10", "zmm11", "zmm12", "zmm13", "zmm14", "zmm15"};
+char * tmmregnames[] = {"none", "tmm0", "tmm1", "tmm2", "tmm3", "tmm4", "tmm5", "tmm6", "tmm7"};
 
 int reg_count = sizeof(regnames) / sizeof(regnames[0]);
 int fpureg_count = sizeof(fpuregnames) / sizeof(fpuregnames[0]);
 int fpuctrlreg_count = sizeof(fpuctrlnames) / sizeof(fpuctrlnames[0]);
+int mmxreg_count = sizeof(mmxregnames) / sizeof(mmxregnames[0]);
 int xmmreg_count = sizeof(xmmregnames) / sizeof(xmmregnames[0]);
 int ymmreg_count = sizeof(ymmregnames) / sizeof(ymmregnames[0]);
 int zmmreg_count = sizeof(zmmregnames) / sizeof(zmmregnames[0]);
+int tmmreg_count = sizeof(tmmregnames) / sizeof(tmmregnames[0]);
 
 uint16_t print_flags = PRINT_GENERAL | PRINT_XMM | PRINT_FPU; // no PRINT_YMM
 
 
+
+int detect_fpu_reg_mode(int regnum) {
+	// oh boy...
+	char name[8] = {'s', 't', '0' + regnum, 0x00};
+	fpu_float_t * reg = lookup_fpuregister(name);
+	uint16_t * top16 = ((void *) reg) + 8; // top 16 bits
+	if (*top16 == 0xffff) {
+		return FPU_MODE_MMX;
+	}
+	return FPU_MODE_FPU;
+}
 
 void print_uppercase(char * string) {
 	while (*string) {
@@ -59,6 +75,10 @@ void print_zmm(void * p, int type) {
 	memcpy(buffer + 32, p, 32);
 	p = buffer;
 	print_typed_bytes(p, type, 64);
+}
+
+void print_tmm(void * p, int type) {
+	print_typed_bytes(p, type, 1024);
 }
 
 int xmm_per_line(int type) {
@@ -169,21 +189,38 @@ int dump_zmm_registers(int index) {
 	return 1;
 }
 
+int dump_tmm_registers(int index) {
+	if (!(print_flags & PRINT_TMM)) {
+		return 0;
+	}
+	return 1;
+}
+
 int dump_fpu_registers(int index) {
 	if (!(print_flags & PRINT_FPU)) {
 		return 0;
 	}
 	int printed = 1;
+	int regnum = 0;
 	putchar((!!index) * '\n');
 	while (printed <= 8) {
 		for (int i = 0; i < 4; i++) {
 			if (printed > 8) {
 				break;
 			}
-			char * name = fpuregnames[printed];
-			fpu_float_t * f = lookup_fpuregister(name);
-			print_uppercase(name);
-			printf("=%lf%c", fpu_float_to_double(f), i == 3 ? 0 : ' ');
+			int fpu_mode = detect_fpu_reg_mode(regnum);
+			if (fpu_mode == FPU_MODE_FPU) {
+				char * name = fpuregnames[printed];
+				fpu_float_t * f = lookup_fpuregister(name);
+				print_uppercase(name);
+				printf("=%lf%c", fpu_float_to_double(f), i == 3 ? 0 : ' ');
+			} else { // mmx mode
+				char * name = mmxregnames[printed];
+				double * f = lookup_mmxregister(name);
+				print_uppercase(name);
+				printf("=%lf%c", *f, i == 3 ? 0 : ' ');
+			}
+			regnum++;
 			printed++;
 		}
 		putchar('\n');
@@ -205,6 +242,7 @@ void dump_registers() {
 	c += dump_xmm_registers(c);
 	c += dump_ymm_registers(c);
 	c += dump_zmm_registers(c);
+	c += dump_tmm_registers(c);
 
 	if (print_flags & (PRINT_XMM | PRINT_YMM | PRINT_ZMM)) {
 		printf("\nMXCSR=0x%.8lx\n", fpu_save.mxcsr);
@@ -257,6 +295,16 @@ fpu_float_t * lookup_fpuregister(char * name) {
 	return &registers[index];
 }
 
+double * lookup_mmxregister(char * name) {
+	fpu_float_t * registers = &fpu_save.st0;
+	int index = lookup_index(mmxregnames, mmxreg_count, name);
+	if (index == 0) {
+		return NULL;
+	}
+	index -= 1;
+	return (double *) &registers[index];
+}
+
 xmm_float_t * lookup_xmmregister(char * name) {
 	xmm_float_t * registers = &fpu_save.xmm0;
 	int index = lookup_index(xmmregnames, xmmreg_count, name);
@@ -285,6 +333,16 @@ zmm_float_t * lookup_zmmregister(char * name) {
 	}
 	index -= 1;
 	return (zmm_float_t *) &registers[index];
+}
+
+tile_register_t * lookup_tmmregister(char * name) {
+	tile_register_t * registers = &tile_save.tmm0;
+	int index = lookup_index(tmmregnames, tmmreg_count, name);
+	if (index == 0) {
+		return NULL;
+	}
+	index -= 1;
+	return &registers[index];
 }
 
 uint64_t lookup_register_mask(char * name) {

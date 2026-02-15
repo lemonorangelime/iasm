@@ -8,6 +8,7 @@
 #include <iasm/regs.h>
 #include <iasm/asm.h>
 #include <iasm/setup.h>
+#include <iasm/features.h>
 
 char * file_charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 void tmpname(char * path) {
@@ -28,6 +29,23 @@ ssize_t my_fdsize(int fd) {
 	ssize_t end = lseek(fd, 0, SEEK_END);
 	lseek(fd, cur, SEEK_SET);
 	return end;
+}
+
+ssize_t my_fdlinesize(int fd) {
+	ssize_t cur = lseek(fd, 0, SEEK_CUR);
+	ssize_t end = lseek(fd, 0, SEEK_END);
+	lseek(fd, cur, SEEK_SET);
+
+	char c = 0;
+	ssize_t p = cur;
+	while (p < end && c != '\n') {
+		read(fd, &c, 1);
+		if (c == '\n') { break; }
+		p++;
+	}
+
+	lseek(fd, cur, SEEK_SET);
+	return p - cur;
 }
 
 ssize_t asm_src_fdsize() {
@@ -60,6 +78,16 @@ void asm_src_writeall(void * p, size_t size) {
 	lseek(fd, 0, SEEK_SET);
 	write(fd, p, size);
 	close(fd);
+}
+
+void print_ansii_colour(uint32_t colour) {
+	if (!allow_colour) { return; }
+	printf("\x1b[38;2;%d;%d;%dm", (colour >> 16) & 0xff, (colour >> 8) & 0xff, colour & 0xff);
+}
+
+void print_ansii_reset() {
+	if (!allow_colour) { return; }
+	printf("\x1b[0m");
 }
 
 int resolve_label(char * label, uintptr_t * p) {

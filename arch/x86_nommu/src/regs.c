@@ -200,7 +200,6 @@ int dump_fpu_registers(int index) {
 			if (printed > 8) {
 				break;
 			}
-
 			int fpu_mode = detect_fpu_reg_mode(regnum);
 			if (fpu_mode == FPU_MODE_FPU) {
 				char * name = fpuregnames[printed];

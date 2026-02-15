@@ -9,9 +9,13 @@ vm
 zydis/
 zydis
 *.swp
+*.log
 x86-iasm
 x86-iasm.gz
 x86-iasm.xz
+x86_nommu-iasm
+x86_nommu-iasm.gz
+x86_nommu-iasm.xz
 x86_64-iasm
 x86_64-iasm.gz
 x86_64-iasm.xz

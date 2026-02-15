@@ -1,0 +1,66 @@
+ifeq ($(PREFIX),)
+        PREFIX := /usr/local
+endif
+
+ARCH := x86_nommu
+ASM_EXT := asm
+OUTPUT := $(ARCH)-iasm
+VM_LIB := vm/vm32.o
+ZYD_LIB := zydis/zydis32.o
+ZYD_INC := zydis/amalgamated-dist/
+
+BUILD_DIR := build_$(ARCH)
+
+ASM := nasm
+ASMFLAGS := -f elf32 -I include/
+
+CC := gcc
+CCFLAGS := -rdynamic -flto -s -Oz -ftree-vectorize -fomit-frame-pointer -m32 -mhard-float -fno-stack-protector -Iinclude -Iarch/$(ARCH)/include -I$(ZYD_INC) -Wno-address-of-packed-member -z noexecstack -z noseparate-code
+
+LD := ld
+LDFLAGS := --strip-all --discard-all --discard-locals --strip-debug
+
+SOURCES := $(wildcard src/*.c)
+ARCH_SOURCES := $(wildcard arch/$(ARCH)/src/*.c)
+ASM_SOURCES := $(wildcard arch/$(ARCH)/src/*.$(ASM_EXT))
+
+OBJS := $(subst src/,$(BUILD_DIR)/,$(SOURCES:%.c=%.c.o)) $(subst arch/$(ARCH)/src/,$(BUILD_DIR)/,$(ARCH_SOURCES:%.c=%.c.o))
+ASM_OBJS := $(subst arch/$(ARCH)/src/,$(BUILD_DIR)/,$(ASM_SOURCES:%.$(ASM_EXT)=%.$(ASM_EXT).o))
+
+default: mkdir $(OUTPUT)
+
+mkdir:
+	mkdir -p ${BUILD_DIR}
+
+clean:
+	rm -rf ${BUILD_DIR} ${OUTPUT} ${OUTPUT}.gz ${OUTPUT}.xz
+
+$(BUILD_DIR)/%.c.o: src/%.c
+	$(CC) $(CCFLAGS) $^ -c -o $@
+
+$(BUILD_DIR)/%.c.o: arch/$(ARCH)/src/%.c
+	$(CC) $(CCFLAGS) $^ -c -o $@
+
+$(BUILD_DIR)/%.$(ASM_EXT).o: arch/$(ARCH)/src/%.$(ASM_EXT)
+	$(ASM) $(ASMFLAGS) $^ -o $@
+
+# $(VM_LIB)
+$(OUTPUT): $(OBJS) $(ASM_OBJS)
+	$(CC) $(CCFLAGS) $^ $(ZYD_LIB) -o $@
+	# we need this information now
+	#objcopy --remove-section .note --remove-section .note.gnu.property --remove-section .note.ABI-tag --remove-section .hash --remove-section .gnu.hash --remove-section .gnu.version --remove-section .comment --remove-section .eh_frame_hdr --remove-section .eh_frame $@
+	strip --strip-unneeded --strip-debug --strip-section-headers $@
+	gzip -fqk9 $@
+	xz -fqk9 $@
+
+# "iasm" seems to be a pretty common name
+install: $(OUTPUT)
+	if [ -f "$(PREFIX)/bin/$(OUTPUT)" ]; then \
+		echo "\e[0;31mERROR\e[0m: File conflict. $(PREFIX)/bin/$(OUTPUT) already exists"; \
+		exit; \
+	else \
+		install -m 775 $(OUTPUT) $(PREFIX)/bin/; \
+	fi
+
+uninstall:
+	rm $(PREFIX)/bin/$(OUTPUT)

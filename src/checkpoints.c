@@ -9,14 +9,20 @@
 
 checkpoint_t * checkpoints = NULL;
 int checkpoint_count = 16;
+int present_checkpoint = 0;
+int past_checkpoint = 0;
 int current_checkpoint = 0;
 
-void checkpoint_save() {
+char * get_checkpoint_statement() {
+	return checkpoints[current_checkpoint].statement;
+}
+
+void checkpoint_save(char * statement) {
         ssize_t size = asm_src_fdsize();
 	checkpoint_t * checkpoint = &checkpoints[current_checkpoint];
-	memcpy(checkpoint->code_contents, (void*) EXEC_ADDRESS, EXEC_SIZE);
-	memcpy(checkpoint->jump_table, (void*) JMP_ADDRESS, JMP_SIZE);
-	memcpy(checkpoint->stack_contents, (void*) STACK_ADDRESS, STACK_SIZE);
+	memcpy(checkpoint->code_contents, exec_buffer, EXEC_SIZE);
+	memcpy(checkpoint->jump_table, jmp_buffer, JMP_SIZE);
+	memcpy(checkpoint->stack_contents, stack_buffer, STACK_SIZE);
 	if (checkpoint->text_contents != NULL) {
 		free(checkpoint->text_contents);
 	}
@@ -25,13 +31,19 @@ void checkpoint_save() {
 	checkpoint->text_size = size;
 	asm_src_readall(checkpoint->text_contents);
 	arch_save_registers(checkpoint->registers_save);
+
+	if (checkpoint->statement) {
+		free(checkpoint->statement);
+	}
+	checkpoint->statement = statement ? strdup(statement) : NULL;
+	checkpoint->in_use = 1;
 }
 
 void checkpoint_load() {
 	checkpoint_t * checkpoint = &checkpoints[current_checkpoint];
-	memcpy((void*) EXEC_ADDRESS, checkpoint->code_contents, EXEC_SIZE);
-	memcpy((void*) JMP_ADDRESS, checkpoint->jump_table, JMP_SIZE);
-	memcpy((void*) STACK_ADDRESS, checkpoint->stack_contents, STACK_SIZE);
+	memcpy(exec_buffer, checkpoint->code_contents, EXEC_SIZE);
+	memcpy(jmp_buffer, checkpoint->jump_table, JMP_SIZE);
+	memcpy(stack_buffer, checkpoint->stack_contents, STACK_SIZE);
 	if (checkpoint->text_contents != NULL) {
 		asm_src_writeall(checkpoint->text_contents, checkpoint->text_size);
 	}
@@ -39,13 +51,16 @@ void checkpoint_load() {
 	arch_load_registers(checkpoint->registers_save);
 }
 
+int checkpoint_limit(int checkpoint) {
+	if (checkpoint < 0) { return 0; }
+	if (checkpoint >= checkpoint_count) { return checkpoint % checkpoint_count; }
+	return checkpoint;
+}
+
 void checkpoint_bound_check() {
-	if (current_checkpoint < 0) {
-		current_checkpoint = 0;
-	}
-	if (current_checkpoint >= checkpoint_count) {
-		current_checkpoint %= checkpoint_count;
-	}
+	current_checkpoint = checkpoint_limit(current_checkpoint);
+	present_checkpoint = checkpoint_limit(present_checkpoint);
+	past_checkpoint = checkpoint_limit(past_checkpoint);
 }
 
 void checkpoint_update() {
@@ -60,26 +75,45 @@ void checkpoint_update() {
 		checkpoint->stack_contents = malloc(STACK_SIZE);
 		checkpoint->registers_save = malloc(REGISTER_SAVE_SIZE);
 		checkpoint->text_size = 0;
+		checkpoint->statement = NULL;
+		checkpoint->in_use = 0;
 		checkpoint->setup = 1;
 	}
 }
 
-void checkpoint_advance() {
+void checkpoint_advance(char * statement) {
+	if (current_checkpoint != present_checkpoint) {
+		present_checkpoint = current_checkpoint;
+	}
+	if (current_checkpoint == present_checkpoint) {
+		present_checkpoint++;
+	}
 	current_checkpoint++;
 	checkpoint_bound_check();
-	checkpoint_save(); // init new checkpoint to continue
+	if (checkpoints[current_checkpoint].in_use) {
+		past_checkpoint++; // rollover
+	}
+	checkpoint_save(statement); // init new checkpoint to continue
 }
 
-void checkpoint_wind() {
+int checkpoint_wind() {
+	if (present_checkpoint == current_checkpoint) {
+		return 0;
+	}
 	current_checkpoint++;
 	checkpoint_bound_check();
 	checkpoint_load(); // load new state
+	return 1;
 }
 
-void checkpoint_rewind() {
+int checkpoint_rewind() {
+	if (current_checkpoint == past_checkpoint) {
+		return 0;
+	}
 	current_checkpoint--;
 	checkpoint_bound_check();
 	checkpoint_load(); // load old state
+	return 1;
 }
 
 void checkpoint_init() {
@@ -89,7 +123,8 @@ void checkpoint_init() {
 
 	for (int i = 0; i < checkpoint_count; i++) {
 		current_checkpoint = i;
-		checkpoint_save();
+		checkpoint_save(NULL);
+		checkpoints[current_checkpoint].in_use = 0;
 	}
 
 	current_checkpoint = 0;

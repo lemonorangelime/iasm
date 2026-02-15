@@ -20,8 +20,10 @@ depends:
 clean:
 	rm -rf ./zydis/amalgamated-dist/
 	make -f Makefile_x86_64 clean
+	make -f Makefile_x86_nommu clean
 	make -f Makefile_x86 clean
 
 %:
 	make -f Makefile_x86_64 $@
+	make -f Makefile_x86_nommu $@
 	make -f Makefile_x86 $@

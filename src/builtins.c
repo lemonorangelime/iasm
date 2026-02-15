@@ -36,6 +36,8 @@ int decode_print_flag(char * type) {
 		return PRINT_YMM;
 	} else if (strcasecmp(type, "zmm") == 0) {
 		return PRINT_ZMM;
+	} else if (strcasecmp(type, "tmm") == 0) {
+		return PRINT_TMM;
 	} else if (strcasecmp(type, "fpu") == 0) {
 		return PRINT_FPU;
 	}
@@ -78,6 +80,24 @@ int print_fpu_register(char * regname, char * type) {
 	return 0;
 }
 
+int print_mmx_register(char * regname, char * type) {
+	double * f = lookup_mmxregister(regname);
+	if (!f) {
+		return 1;
+	}
+
+	int type_identifier = *type ? decode_type(type) : FLOAT64; // use type prefix OR default type
+	int type_size = decode_type_size(type_identifier); // size
+	if (type_size > 8) {
+		printf("type too large\n");
+		return 0;
+	}
+
+	print_typed_bytes(f, type_identifier, 8);
+	putchar('\n');
+	return 0;
+}
+
 int print_xmm_register(char * regname, char * type) {
 	void * xp = lookup_xmmregister(regname);
 	if (!xp) {
@@ -108,6 +128,16 @@ int print_zmm_register(char * regname, char * type) {
 	return 0;
 }
 
+int print_tmm_register(char * regname, char * type) {
+	void * zp = lookup_tmmregister(regname);
+	if (!zp) {
+		return 1;
+	}
+	print_tmm(zp, *type ? decode_type(type) : tmm_type);
+	putchar('\n');
+	return 0;
+}
+
 int print_label(char * label, char * type) {
 	uintptr_t address = 0;
 	if (resolve_label(label, &address)) {
@@ -133,10 +163,12 @@ int print_function(char * regname, char * type) {
 		case PLATFORM_X86_64:
 		case PLATFORM_X86:
 			errors += print_fpu_register(regname, type);
+			errors += print_mmx_register(regname, type);
 			errors += print_xmm_register(regname, type);
 			errors += print_ymm_register(regname, type);
 			errors += print_zmm_register(regname, type);
-			return !(errors == 6);
+			errors += print_tmm_register(regname, type);
+			return !(errors == 8);
 	}
 	return !(errors == 2);
 }
@@ -247,7 +279,11 @@ int execute_builtins(char * line) {
 		return 2;
 	}
 	if (strcmp(line, "ver") == 0 || strcmp(line, "version") == 0) {
-		printf("%d.%d.%d\n", major_version, minor_version, patch_version);
+		printf("IASM version %d.%d.%d\n", major_version, minor_version, patch_version);
+		return 1;
+	}
+	if (strcmp(line, "nver") == 0 || strcmp(line, "nversion") == 0) {
+		system("/usr/bin/nasm --version"); // this is actuaylly fine
 		return 1;
 	}
 	if (strlen(line) >= 4 && memcmp(line, "help", 4) == 0) {
@@ -256,19 +292,23 @@ int execute_builtins(char * line) {
 			return 1;
 		}
 		puts("version       |  print iasm version");
+		puts("nversion      |  print nasm version");
 		puts("freeze        |  pause execution");
 		puts("unfreeze      |  unpause execution");
 		puts("assemble      |  assemble instruction (assemble addsd xmm0, xmm1)");
 		puts("xmm_type      |  set default type for xmm registers (xmm_type INT256/128/64/32/16/8 / FLOAT64/32/16/8)");
 		puts("ymm_type      |  set default type for ymm registers (ymm_type INT256/128/64/32/16/8 / FLOAT64/32/16/8)");
 		puts("zmm_type      |  set default type for zmm registers (zmm_type INT256/128/64/32/16/8 / FLOAT64/32/16/8)");
-		puts("dump_enable   |  enable function of `dump` command (general, xmm, ymm, zmm, fpu)");
-		puts("dump_disable  |  disable function of `dump` command (general, xmm, ymm, zmm, fpu)");
+		puts("tmm_type      |  set default type for tmm registers (tmm_type MAT3x3/4x4/16x32)");
+		puts("rgb_style     |  set printing style for the RGB data types (rgb_style CSS/BLOCKS)");
+		puts("dump_enable   |  enable function of `dump` command (general, xmm, ymm, zmm, tmm, fpu)");
+		puts("dump_disable  |  disable function of `dump` command (general, xmm, ymm, zmm, tmm, fpu)");
 		puts("feat_enable   |  enable feature (emulation)");
 		puts("feat_disable  |  disable feature (emulation)");
 		puts("print         |  print value of register (print xmm0 / print FLOAT64 xmm0)");
 		puts("rewind        |  rewind to previous checkpoint");
 		puts("advance       |  advance to next checkpoint");
+		puts("invoke        |  runs a command through the shell");
 		puts("x             |  examine memory (x/10xq 0x1234)");
 		puts("dump          |  print all registers");
 		puts("exit          |  exit program");
@@ -309,14 +349,64 @@ int execute_builtins(char * line) {
 		vmmode_init();
 		return 1; */
 	}
+	if (memcmp(line, "invoke ", 7) == 0) {
+		system(line + 7);
+		return 1;
+	}
 	if (strcmp(line, "rewind") == 0) {
-		printf("Time traveling backwards...\n");
-		checkpoint_rewind();
+		if (!(feature_flags & FEAT_CHECKPOINTS)) {
+			printf("Checkpoints disabled\n");
+			return 1;
+		}
+
+		if (!checkpoint_rewind()) {
+			printf("Can not rewind - already at the last checkpoint\n");
+			return 1;
+		}
+
+		char * statement = get_checkpoint_statement();
+		if (!statement) {
+			printf("Rewound to [no statement]\n");
+			return 1;
+		}
+		printf("Rewound to [> %s]\n", statement);
 		return 1;
 	}
 	if (strcmp(line, "advance") == 0) {
-		printf("Time traveling forwards...\n");
-		checkpoint_wind();
+		if (!(feature_flags & FEAT_CHECKPOINTS)) {
+			printf("Checkpoints disabled\n");
+			return 1;
+		}
+
+		if (!checkpoint_wind()) {
+			printf("Can not advance - already in the present\n");
+			return 1;
+		}
+
+		char * statement = get_checkpoint_statement();
+		if (!statement) {
+			printf("Advanced to [no statement]\n");
+			return 1;
+		}
+		printf("Advanced to [> %s]\n", statement);
+		return 1;
+	}
+	if (strcmp(line, "history") == 0) {
+		if (!(feature_flags & FEAT_CHECKPOINTS)) {
+			printf("Checkpoints disabled\n");
+			return 1;
+		}
+
+		int last_checkpoint = checkpoint_limit(present_checkpoint + 1);
+		for (int i = past_checkpoint; i != last_checkpoint; i = checkpoint_limit(i + 1)) {
+			char * statement = checkpoints[i].statement;
+			char * current = (i == current_checkpoint) ? " <- current" : "";
+			if (!statement) {
+				printf("[no statement]%s\n", current);
+				continue;
+			}
+			printf("[> %s]%s\n", statement, current);
+		}
 		return 1;
 	}
 	if ((sscanf(line, "externf %s%s%s", buffer, buffer2, buffer3) > 0) || (sscanf(line, "extern %s%s%s", buffer, buffer2, buffer3) > 0)) {
@@ -371,10 +461,19 @@ int execute_builtins(char * line) {
 		zmm_type = decode_type(buffer);
 		return 1;
 	}
+	if (sscanf(line, "tmm_type %s", buffer) > 0) {
+		tmm_type = decode_type(buffer);
+		return 1;
+	}
+	if (sscanf(line, "rgb_style %s", buffer) > 0) {
+		rgb_style = decode_rgb_style(buffer);
+		return 1;
+	}
 	if (sscanf(line, "dump_enable %s", buffer) > 0) {
 		int flag = decode_print_flag(buffer);
 		if (flag == -1) {
-			return 0;
+			printf("bad flag\n");
+			return 1;
 		}
 		print_flags |= flag;
 		return 1;
@@ -382,7 +481,8 @@ int execute_builtins(char * line) {
 	if (sscanf(line, "dump_disable %s", buffer) > 0) {
 		int flag = decode_print_flag(buffer);
 		if (flag == -1) {
-			return 0;
+			printf("bad flag\n");
+			return 1;
 		}
 		print_flags &= ~flag;
 		return 1;
@@ -390,7 +490,8 @@ int execute_builtins(char * line) {
 	if (sscanf(line, "feat_enable %s", buffer) > 0) {
 		int flag = decode_feature_flag(buffer);
 		if (flag == 0) {
-			return 0;
+			printf("bad flag\n");
+			return 1;
 		}
 		feature_flags |= flag;
 		return 1;
@@ -398,9 +499,10 @@ int execute_builtins(char * line) {
 	if (sscanf(line, "feat_disable %s", buffer) > 0) {
 		int flag = decode_feature_flag(buffer);
 		if (flag == 0) {
-			return 0;
+			printf("bad flag\n");
+			return 1;
 		}
-		feature_flags |= flag;
+		feature_flags &= ~flag;
 		return 1;
 	}
 	if (strlen(line) > 9 && memcmp(line, "assemble ", 9) == 0) {
@@ -423,6 +525,7 @@ help_topic_t help_topics[] = {
 	{"xmm_type",	"sets default dump/print type for xmm registers\ntype can be FLOAT64/32/16/8 or INT256/128/64/32/16/8"},
 	{"ymm_type",	"sets default dump/print type for ymm registers\ntype can be FLOAT64/32/16/8 or INT256/128/64/32/16/8"},
 	{"zmm_type",	"sets default dump/print type for zmm registers\ntype can be FLOAT64/32/16/8 or INT256/128/64/32/16/8"},
+	{"tmm_type",	"sets default dump/print type for tmm registers\ntype can be MAT3x3/4x4/16x32"},
 	{"print",	"prints register or label value (print rax, print label)\ncan also take a type for xmm registers (print FLOAT64 xmm0)"},
 	{"assemble",	"assembles an instruction and prints the result as a series of bytes\n\n        > assemble fldpi\n        0xd9 0xeb\n"},
 	{"x",		"examines memory (x/[count][type][size])\n\ncount: number of units to print\ntype: unit type (x = hexadecimal, d = signed digit, u = unsigned digit, o = octal, c = character, b = binary, f = float)\nsize: unit size (b = byte, w = word, d = dword, q = qword)\n\n        > ~example: dd 0x12345678\n        > x/1xd example\n        0x12345678\n        > x/4x example\n        0x78 0x56 0x34 0x12\n"}
