@@ -19,3 +19,6 @@ x86_nommu-iasm.xz
 x86_64-iasm
 x86_64-iasm.gz
 x86_64-iasm.xz
+
+# there's like 400mb of trash in there
+sdm/

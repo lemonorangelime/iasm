@@ -20,6 +20,7 @@
 #include <iasm/platform.h>
 #include <iasm/features.h>
 #include <iasm/checkpoints.h>
+#include <iasm/sdm.h>
 
 help_topic_t help_topics[];
 int topic_count;
@@ -467,6 +468,14 @@ int execute_builtins(char * line) {
 	}
 	if (sscanf(line, "rgb_style %s", buffer) > 0) {
 		rgb_style = decode_rgb_style(buffer);
+		return 1;
+	}
+	if (sscanf(line, "sdm %s", buffer) > 0) {
+		intel_sdm_t * entry = sdm_entry(buffer);
+		if (!entry) {
+			return 1;
+		}
+		sdm_print(entry);
 		return 1;
 	}
 	if (sscanf(line, "dump_enable %s", buffer) > 0) {

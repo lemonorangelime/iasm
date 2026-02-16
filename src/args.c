@@ -1,10 +1,12 @@
 #include <iasm/argv.h>
+#include <iasm/args.h>
 #include <iasm/version.h>
 #include <iasm/features.h>
 #include <iasm/argvtypes.h>
 #include <iasm/types.h>
 #include <iasm/asm.h>
 #include <iasm/regs.h>
+#include <iasm/sdm.h>
 #include <stdio.h>
 #include <string.h>
 #include <stddef.h>
@@ -21,6 +23,11 @@ void args_feature_callback(void * priv, args_option_t * option, char * arg) {
 void args_replay_callback(void * priv, args_option_t * option, char * arg) {
 	if (!arg) { return; } // whatever
 	replay_file = arg;
+}
+
+void args_sdm_callback(iasm_priv_t * priv, args_option_t * option, char * arg) {
+	if (!arg) { return; } // whatever
+	priv->sdm_query = arg;
 }
 
 void args_rgb_style_callback(void * priv, args_option_t * option, char * arg) {
@@ -84,6 +91,10 @@ int handle_args(int argc, char * argv[]) {
 		{'v', "verbose",             0, TYPE_BOOL,   0, args_verbosity_callback, .help="increase verbosity"},
 		{'r', "replay",              1, TYPE_STRING, 0, args_replay_callback,    .help="replay file"},
 		{0,   NULL,                  0, TYPE_NULL,   0, NULL,                    .help=""}, // padding
+		{'s', "sdm",                 1, TYPE_STRING, 0, args_sdm_callback,       .help="print an Intel SDM entry, then exit"},
+		{0,   "isdm",                1, TYPE_STRING, 0, args_sdm_callback,       .help=""},
+		{0,   "man",                 1, TYPE_STRING, 0, args_sdm_callback,       .help=""},
+		{0,   NULL,                  0, TYPE_NULL,   0, NULL,                    .help=""}, // padding
 		{'n', "no-colour",           0, TYPE_BOOL,   0, args_colour_callback,    .help="disable ANSI terminal colours"},
 		{0,   "no-color",            0, TYPE_BOOL,   0, args_colour_callback,    .help=""}, // alias
 		{0,   "rgb-style",           1, TYPE_STRING, 0, args_rgb_style_callback, .help="set RGB printing style"},
@@ -103,10 +114,21 @@ int handle_args(int argc, char * argv[]) {
 	int options_count = sizeof(options) / sizeof(options[0]);
 	args_setup(ARG_NONE_REQUIRED);
 	args_load_spec(spec);
-	if (args_parse(argc, argv, options_count, options, NULL)) {
+
+	iasm_priv_t priv = {NULL};
+	if (args_parse(argc, argv, options_count, options, &priv)) {
 		return -1;
 	}
 
 	args_unsetup();
+	if (priv.sdm_query) {
+		intel_sdm_t * entry = sdm_entry(priv.sdm_query);
+		if (!entry) {
+			return 0;
+		}
+		sdm_print(entry);
+		return -1;
+	}
+
 	return 0;
 }

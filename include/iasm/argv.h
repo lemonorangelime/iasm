@@ -10,10 +10,6 @@ typedef void (* args_float_callback_t)(void * priv, args_option_t * option, floa
 typedef void (* args_string_callback_t)(void * priv, args_option_t * option, char * arg);
 typedef void (* args_bool_callback_t)(void * priv, args_option_t * option, int present);
 
-typedef struct {
-	char * a;
-} iasm_priv_t;
-
 typedef struct args_option {
 	char short_name;
 	char * long_name;
