@@ -124,7 +124,8 @@ int handle_args(int argc, char * argv[]) {
 	if (priv.sdm_query) {
 		intel_sdm_t * entry = sdm_entry(priv.sdm_query);
 		if (!entry) {
-			return 0;
+			printf("NO ENTRY FOUND.\n");
+			return -1;
 		}
 		sdm_print(entry);
 		return -1;

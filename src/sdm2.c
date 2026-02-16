@@ -9,8 +9,9 @@ int sdm_part_length(char * part) {
 	return i;
 }
 
-int sdm_parts_remaining(char * part) {
-	return *part != 0;
+int sdm_is_part(char * part) {
+	while (*part != 0 && *part != ':') { part++; }
+	return *part == ':';
 }
 
 int sdm_name_match(intel_sdm_t * entry, char * instruction) {
@@ -25,12 +26,13 @@ int sdm_name_match(intel_sdm_t * entry, char * instruction) {
 
 	int stat = 1;
 	char * part = entry->name;
-	while (sdm_parts_remaining(part)) {
-		int part_length = sdm_part_length(entry->name);
+	char * part_end = part + strlen(part);
+	while (*part && (part < part_end)) {
+		int part_length = sdm_part_length(part);
 		if ((part_length == instr_length) && (memcmp(part, instruction, part_length) == 0)) {
 			return 1;
 		}
-		part += part_length + 1;
+		part += part_length + sdm_is_part(part);
 	}
 	return 0;
 }
