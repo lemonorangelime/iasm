@@ -15,7 +15,7 @@ ASM := nasm
 ASMFLAGS := -f elf64 -I include/
 
 CC := gcc
-CCFLAGS := -rdynamic -flto -s -Oz -ftree-vectorize -fomit-frame-pointer -m64 -mhard-float -msse2 -fno-stack-protector -Iinclude -Iarch/$(ARCH)/include -I$(ZYD_INC) -Wno-address-of-packed-member -z noexecstack -z noseparate-code
+CCFLAGS := -Wall -rdynamic -flto -s -Oz -ftree-vectorize -fomit-frame-pointer -m64 -mhard-float -msse2 -fno-stack-protector -Iinclude -Iarch/$(ARCH)/include -I$(ZYD_INC) -Wno-address-of-packed-member -z noexecstack -z noseparate-code
 
 LD := ld
 LDFLAGS := --strip-all --discard-all --discard-locals --strip-debug

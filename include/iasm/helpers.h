@@ -12,5 +12,5 @@ void asm_src_writeall(void * p, size_t size);
 void print_ansii_colour(uint32_t colour);
 void print_ansii_reset();
 int resolve_label(char * label, uintptr_t * p);
-int resolve_register_or_label(char * name, uintptr_t * p);
+int resolve_register_or_label(char * name, uintptr_t * p, int * size);
 int resolve_any_register_or_label(char * name, void * p, int * size, int * type);
