@@ -168,7 +168,7 @@ int resolve_any_register_or_label(char * name, void * p, int * size, int * type)
 					if (reg) {
 						*size = 64;
 						*type = zmm_type;
-						read_ymm(reg, p);
+						read_zmm(reg, p);
 						return 0;
 					}
 					reg = lookup_tmmregister(name);
