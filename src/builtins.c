@@ -20,6 +20,7 @@
 #include <iasm/platform.h>
 #include <iasm/features.h>
 #include <iasm/checkpoints.h>
+#include <iasm/printer.h>
 #include <iasm/sdm.h>
 
 help_topic_t help_topics[];
@@ -43,135 +44,6 @@ int decode_print_flag(char * type) {
 		return PRINT_FPU;
 	}
 	return -1;
-}
-
-int print_register(char * regname, char * type) {
-	uint64_t * p = lookup_register(regname);
-	if (!p) {
-		return 1;
-	}
-	int type_identifier = *type ? decode_type(type) : lookup_register_type(regname); // use type prefix OR lookup default type
-	int type_size = decode_type_size(type_identifier); // size
-	int register_size = lookup_register_size(regname);
-	if (type_size > register_size) {
-		printf("type too large\n");
-		return 0;
-	}
-
-	print_typed_bytes(p, type_identifier, register_size);
-	putchar('\n');
-	return 0;
-}
-
-int print_fpu_register(char * regname, char * type) {
-	fpu_float_t * f = lookup_fpuregister(regname);
-	if (!f) {
-		return 1;
-	}
-
-	int type_identifier = *type ? decode_type(type) : FLOAT80; // use type prefix OR default type
-	int type_size = decode_type_size(type_identifier); // size
-	if (type_size > 10) {
-		printf("type too large\n");
-		return 0;
-	}
-
-	print_typed_bytes(f, type_identifier, 10);
-	putchar('\n');
-	return 0;
-}
-
-int print_mmx_register(char * regname, char * type) {
-	double * f = lookup_mmxregister(regname);
-	if (!f) {
-		return 1;
-	}
-
-	int type_identifier = *type ? decode_type(type) : FLOAT64; // use type prefix OR default type
-	int type_size = decode_type_size(type_identifier); // size
-	if (type_size > 8) {
-		printf("type too large\n");
-		return 0;
-	}
-
-	print_typed_bytes(f, type_identifier, 8);
-	putchar('\n');
-	return 0;
-}
-
-int print_xmm_register(char * regname, char * type) {
-	void * xp = lookup_xmmregister(regname);
-	if (!xp) {
-		return 1;
-	}
-	print_xmm(xp, *type ? decode_type(type) : xmm_type);
-	putchar('\n');
-	return 0;
-}
-
-int print_ymm_register(char * regname, char * type) {
-	void * yp = lookup_ymmregister(regname);
-	if (!yp) {
-		return 1;
-	}
-	print_ymm(yp, *type ? decode_type(type) : ymm_type);
-	putchar('\n');
-	return 0;
-}
-
-int print_zmm_register(char * regname, char * type) {
-	void * zp = lookup_zmmregister(regname);
-	if (!zp) {
-		return 1;
-	}
-	print_zmm(zp, *type ? decode_type(type) : zmm_type);
-	putchar('\n');
-	return 0;
-}
-
-int print_tmm_register(char * regname, char * type) {
-	void * zp = lookup_tmmregister(regname);
-	if (!zp) {
-		return 1;
-	}
-	print_tmm(zp, *type ? decode_type(type) : tmm_type);
-	putchar('\n');
-	return 0;
-}
-
-int print_label(char * label, char * type) {
-	uintptr_t address = 0;
-	if (resolve_label(label, &address)) {
-		return 1;
-	}
-	int type_identifier = *type ? decode_type(type) : INT64;
-	int type_size = decode_type_size(type_identifier);
-	if (type_size > 8) {
-		printf("type too large\n");
-		return 0;
-	}
-	print_typed_value(&address, type_identifier, 8); // intentional print_typed_value (singular), if you do `print DWORD label`, you likely expect it to be truncated
-	putchar('\n');
-	//printf("0x%.16llx\n", address);
-	return 0;
-}
-
-int print_function(char * regname, char * type) {
-	int errors = 0;
-	errors += print_register(regname, type);
-	errors += print_label(regname, type);
-	switch (platform) {
-		case PLATFORM_X86_64:
-		case PLATFORM_X86:
-			errors += print_fpu_register(regname, type);
-			errors += print_mmx_register(regname, type);
-			errors += print_xmm_register(regname, type);
-			errors += print_ymm_register(regname, type);
-			errors += print_zmm_register(regname, type);
-			errors += print_tmm_register(regname, type);
-			return !(errors == 8);
-	}
-	return !(errors == 2);
 }
 
 int assemble_function(char * instruction) {

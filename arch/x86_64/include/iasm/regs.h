@@ -169,6 +169,9 @@ enum {
 	PRINT_TMM	= 0b00100000,
 };
 
+void read_ymm(void * p, uint8_t * buffer);
+void read_zmm(void * p, uint8_t * buffer);
+
 void print_xmm(void * p, int as);
 void print_ymm(void * p, int as);
 void print_zmm(void * p, int as);

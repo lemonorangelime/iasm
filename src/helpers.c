@@ -9,6 +9,8 @@
 #include <iasm/asm.h>
 #include <iasm/setup.h>
 #include <iasm/features.h>
+#include <iasm/platform.h>
+#include <iasm/types.h>
 
 char * file_charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 void tmpname(char * path) {
@@ -108,18 +110,88 @@ int resolve_label(char * label, uintptr_t * p) {
 }
 
 // ONLY general registers, allowing `x/1q xmm0` would be perposterous and utterly absurd
-int resolve_register_or_label(char * name, uintptr_t * p) {
+int resolve_register_or_label(char * name, uintptr_t * p, int * size) {
 	uintptr_t address = 0;
 	if (resolve_label(name, &address)) {
 		uint64_t * regp = lookup_register(name);
 		if (!regp) {
 			return 1;
 		}
-		int size = lookup_register_size(name);
+		*size = lookup_register_size(name);
+
 		int ptrsize = sizeof(uintptr_t);
-		memcpy(p, regp, (ptrsize > size) ? ptrsize : size);
+		memcpy(p, regp, (ptrsize > *size) ? ptrsize : *size);
 		return 0;
 	}
 	*p = address;
+	*size = sizeof(uintptr_t);
+	return 0;
+}
+
+// like anything at all
+int resolve_any_register_or_label(char * name, void * p, int * size, int * type) {
+	uintptr_t address = 0;
+	if (resolve_label(name, &address)) {
+		uint64_t * regp = lookup_register(name);
+		if (!regp) {
+			// resolve some bullshit SSE or FPU or AVX or AMX or APX or whatever the fuck register
+			void * reg = NULL;
+			switch (platform) {
+				case PLATFORM_X86_64:
+				case PLATFORM_X86:
+					reg = lookup_fpuregister(name);
+					if (reg) {
+						*size = 10;
+						*type = FLOAT80;
+						break;
+					}
+					reg = lookup_mmxregister(name);
+					if (reg) {
+						*size = 8;
+						*type = FLOAT64;
+						break;
+					}
+					reg = lookup_xmmregister(name);
+					if (reg) {
+						*size = 16;
+						*type = xmm_type;
+						break;
+					}
+					reg = lookup_ymmregister(name);
+					if (reg) {
+						*size = 32;
+						*type = ymm_type;
+						read_ymm(reg, p);
+						return 0;
+					}
+					reg = lookup_zmmregister(name);
+					if (reg) {
+						*size = 64;
+						*type = zmm_type;
+						read_ymm(reg, p);
+						return 0;
+					}
+					reg = lookup_tmmregister(name);
+					if (reg) {
+						*size = 1024;
+						*type = tmm_type;
+						break;
+					}
+					reg = NULL;
+					break;
+			}
+			if (reg) {
+				memcpy(p, reg, *size);
+				return 0;
+			}
+			return 1;
+		}
+		*size = lookup_register_size(name);
+		*type = lookup_register_type(name);
+		memcpy(p, regp, *size);
+		return 0;
+	}
+	*(uintptr_t *) p = address;
+	*size = sizeof(uintptr_t);
 	return 0;
 }

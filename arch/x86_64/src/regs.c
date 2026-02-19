@@ -51,29 +51,34 @@ void print_uppercase(char * string) {
 	}
 }
 
-void print_xmm(void * p, int type) {
-	print_typed_bytes(p, type, 16);
-}
-
-void print_ymm(void * p, int type) {
-	uint8_t buffer[32];
+void read_ymm(void * p, uint8_t * buffer) {
 	memcpy(buffer, p, 16);
 	p += ((uintptr_t) &fpu_save.ymm0_high - (uintptr_t) &fpu_save.xmm0);
 	memcpy(buffer + 16, p, 16);
-
-	p = buffer;
-	print_typed_bytes(p, type, 32);
 }
 
-void print_zmm(void * p, int type) {
-	uint8_t buffer[64];
+void read_zmm(void * p, uint8_t * buffer) {
 	int index = (((uintptr_t) p) - ((uintptr_t) &fpu_save.xmm0)) >> 4;
 	memcpy(buffer, p, 16);
 	p += ((uintptr_t) &fpu_save.ymm0_high - (uintptr_t) &fpu_save.xmm0);
 	memcpy(buffer + 16, p, 16);
 	p = (void *) ((uintptr_t) &fpu_save.zmm0_high) + (index << 5);
 	memcpy(buffer + 32, p, 32);
-	p = buffer;
+}
+
+void print_xmm(void * p, int type) {
+	print_typed_bytes(p, type, 16);
+}
+
+void print_ymm(void * p, int type) {
+	uint8_t buffer[32];
+	read_ymm(p, buffer);
+	print_typed_bytes(buffer, type, 32);
+}
+
+void print_zmm(void * p, int type) {
+	uint8_t buffer[64];
+	read_zmm(p, buffer);
 	print_typed_bytes(p, type, 64);
 }
 
