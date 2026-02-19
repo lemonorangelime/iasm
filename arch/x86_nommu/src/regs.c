@@ -5,6 +5,7 @@
 #include <iasm/asm.h>
 #include <iasm/regs.h>
 #include <iasm/types.h>
+#include <iasm/cpuid.h>
 
 // dont care calling these whatever
 char * regnames[] = {"none", "eax", "ebx", "ecx", "edx", "esp", "ebp", "esi", "edi", "eflags", "eip"};
@@ -62,7 +63,12 @@ void read_zmm(void * p, uint8_t * buffer) {
 	memcpy(buffer, p, 16);
 	p += ((uintptr_t) &fpu_save.ymm0_high - (uintptr_t) &fpu_save.xmm0);
 	memcpy(buffer + 16, p, 16);
-	p = (void *) ((uintptr_t) &fpu_save.zmm0_high) + (index << 5);
+
+	uint32_t trash = 0;
+	uint32_t offset = 0;
+	cpuid(0x0d, 0, 6, 0, &trash, &offset, &trash, &trash);
+
+	p = (void *) ((uintptr_t) &fpu_save) + offset + (index << 5);
 	memcpy(buffer + 32, p, 32);
 }
 

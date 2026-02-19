@@ -1,8 +1,8 @@
 #include <stdint.h>
 
-void cpuid(int parameter, uint32_t * eax, uint32_t * ebx, uint32_t * ecx, uint32_t * edx) {
+void cpuid(int eax_in, int ebx_in, int ecx_in, int edx_in, uint32_t * eax, uint32_t * ebx, uint32_t * ecx, uint32_t * edx) {
 	asm volatile("cpuid"
 		: "=a"(*eax), "=b"(*ebx), "=c"(*ecx), "=d"(*edx)
-		: "a"(parameter)
+		: "a"(eax_in), "c"(ecx_in)
 	);
 }
