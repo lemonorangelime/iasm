@@ -1,2 +1,0 @@
-pinos::GSC::init_generic_handle_table_with_open_fds(): openNativeFds[0] equals -1. Pin will create pin_stdin.log instead of standard stream
-pinos::GSC::init_generic_handle_table_with_open_fds(): openNativeFds[1] equals -1. Pin will create pin_stdout.log instead of standard stream
