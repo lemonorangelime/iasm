@@ -128,7 +128,7 @@ int examine(char * line) {
 	}
 
 	int __trash = 0;
-	if (resolve_register_or_label(line, &address, __trash)) {
+	if (resolve_register_or_label(line, &address, &__trash)) {
 		return 0; // match failed
 	}
 
