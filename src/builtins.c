@@ -156,7 +156,7 @@ int execute_builtins(char * line) {
 		return 1;
 	}
 	if (strcmp(line, "nver") == 0 || strcmp(line, "nversion") == 0) {
-		system("/usr/bin/nasm --version"); // this is actuaylly fine
+		(void) system("/usr/bin/nasm --version"); // this is actuaylly fine
 		return 1;
 	}
 	if (strlen(line) >= 4 && memcmp(line, "help", 4) == 0) {
@@ -223,7 +223,7 @@ int execute_builtins(char * line) {
 		return 1; */
 	}
 	if (memcmp(line, "invoke ", 7) == 0) {
-		system(line + 7);
+		(void) system(line + 7);
 		return 1;
 	}
 	if (strcmp(line, "rewind") == 0) {

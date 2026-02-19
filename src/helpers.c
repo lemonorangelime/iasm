@@ -41,7 +41,7 @@ ssize_t my_fdlinesize(int fd) {
 	char c = 0;
 	ssize_t p = cur;
 	while (p < end && c != '\n') {
-		read(fd, &c, 1);
+		(void) read(fd, &c, 1);
 		if (c == '\n') { break; }
 		p++;
 	}
@@ -66,7 +66,7 @@ void asm_src_readall(void * p) {
 		return;
 	}
 	ssize_t size = my_fdsize(fd);
-	read(fd, p, size);
+	(void) read(fd, p, size);
 	close(fd);
 }
 
@@ -76,9 +76,9 @@ void asm_src_writeall(void * p, size_t size) {
 		return;
 	}
 	lseek(fd, 0, SEEK_SET);
-	ftruncate(fd, size);
+	(void) ftruncate(fd, size);
 	lseek(fd, 0, SEEK_SET);
-	write(fd, p, size);
+	(void) write(fd, p, size);
 	close(fd);
 }
 

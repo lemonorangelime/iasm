@@ -156,12 +156,12 @@ int examine(char * line) {
 			fflush(stdout);
 			if ((printed > 80) && count) {
 				printed = 0;
-				write(1, "\n", 1);
+				(void) write(1, "\n", 1);
 				printed += printf("0x%.16llx: ", p);
 				fflush(stdout);
 			}
 		}
 	}
-	write(1, "\n", !!printed);
+	(void) write(1, "\n", !!printed);
 	return 1;
 }
