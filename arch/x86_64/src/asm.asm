@@ -15,6 +15,9 @@ align 16
 sym mxcsr_fixup, dd 0x1f80
 align 32
 sym tile_cfg, times 512 db 0
+align 64
+sym avx512_ones
+dq 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff
 align 128
 sym tile_save
 sym tile0_save, times 1024 db 0
@@ -536,6 +539,26 @@ sym setup_fpu
 	call restore_fpu_state
 	finit
 	ldmxcsr [rel mxcsr_fixup]	; seriously? come on
+
+	mov eax, 7
+	xor ecx, ecx
+	cpuid
+	test ebx, 1 << 16
+	jz .noavx512
+
+	vmovupd zmm0, [rel avx512_ones]
+	vpmovq2m k0, zmm0
+	vpmovq2m k1, zmm0
+	vpmovq2m k2, zmm0
+	vpmovq2m k3, zmm0
+	vpmovq2m k3, zmm0
+	vpmovq2m k4, zmm0
+	vpmovq2m k5, zmm0
+	vpmovq2m k6, zmm0
+	vpmovq2m k7, zmm0
+	vzeroall
+.noavx512:
+
 	call save_fpu_state
 	call restore_caller_fpu_state
 
