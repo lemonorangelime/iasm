@@ -205,7 +205,7 @@ void args_call_callback(void * p, args_option_t * option, char * arg, void * pri
 	}
 	if (settings.no_casts || ((option->flags & ARG_NO_CASTS) != 0) || option->type == TYPE_NULL) {
 		args_int_callback_t callback = (args_int_callback_t) p;
-		callback(priv, option, (int64_t) (uintptr_t) arg, 1);
+		callback(priv, option, (int64_t) arg, 1);
 		return;
 	}
 	switch (option->type) {

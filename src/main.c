@@ -66,7 +66,7 @@ int handle_statement(char * line) {
 
 ssize_t read_input(char ** line, size_t * size) {
 	ssize_t r = 0;
-	(void) write(1, "> ", 2);
+	write(1, "> ", 2);
 	r = getline(line, size, stdin);
 	if (r == -1) {
 		putchar('\n');
@@ -104,7 +104,7 @@ void play_replay() {
 			continue;
 		}
 		char * buffer = malloc(line_size + 1);
-		(void) read(fd, buffer, line_size);
+		read(fd, buffer, line_size);
 		buffer[line_size] = 0;
 		if (verbose) {
 			printf("> %s\n", buffer);

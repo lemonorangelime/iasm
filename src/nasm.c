@@ -30,7 +30,7 @@ char * nasm_buffer_printl(int * read, char * buffer) {
 		return NULL;
 	}
 	int line_length = nasm_buffer_line_length(read, cut);
-	(void) write(1, cut, line_length + 1);
+	write(1, cut, line_length + 1);
 	*read -= line_length + 1;
 	if (!*read) {
 		return NULL;

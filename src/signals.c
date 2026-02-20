@@ -92,7 +92,7 @@ void signal_handler(int signum, siginfo_t * info, ucontext_t * context) {
 		printf("fatal internal error (sig %d)\n", signum);
 		exit(-1);
 	}
-	(void) write(1, "> ", 2);
+	write(1, "> ", 2);
 }
 
 void register_handlers() {
