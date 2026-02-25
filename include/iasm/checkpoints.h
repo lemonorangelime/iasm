@@ -24,6 +24,8 @@ extern int current_checkpoint;
 
 char * get_checkpoint_statement();
 
+void checkpoint_save_p(checkpoint_t * checkpoint, char * statement);
+void checkpoint_load_p(checkpoint_t * checkpoint);
 void checkpoint_save(char * statement);
 void checkpoint_load();
 int checkpoint_limit(int checkpoint);

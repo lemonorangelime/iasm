@@ -6,6 +6,7 @@
 typedef struct args_option args_option_t;
 
 typedef void (* args_int_callback_t)(void * priv, args_option_t * option, int arg, int has_arg);
+typedef void (* args_address_callback_t)(void * priv, args_option_t * option, uintptr_t arg, int has_arg);
 typedef void (* args_float_callback_t)(void * priv, args_option_t * option, float arg, int has_arg);
 typedef void (* args_string_callback_t)(void * priv, args_option_t * option, char * arg);
 typedef void (* args_bool_callback_t)(void * priv, args_option_t * option, int present);

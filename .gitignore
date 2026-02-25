@@ -10,6 +10,7 @@ zydis/
 zydis
 *.swp
 *.log
+*.log.*
 x86-iasm
 x86-iasm.gz
 x86-iasm.xz

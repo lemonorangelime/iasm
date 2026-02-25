@@ -42,7 +42,7 @@ int args_contains_long(int argc, char * argv[], char * shortname, char * longnam
 // --    == invalid
 // a     == invalid
 // abc   == invalid
-// note: this is kinda stupid?
+// note: this is not kinda stupid?
 int args_is_valid(char * arg, int size) {
 	if (size < 2) {
 		return 0;
@@ -63,6 +63,8 @@ args_option_t * args_find(char * arg, int optionc, args_option_t * options) {
 	int is_short = arg[1] != '-'; // arg is always 2 chars long so this is fine
 	char short_name = arg[1]; // grab the character
 	char * long_name = arg + 2; // get past --
+
+	// what the fuck lmao??? why is this a switch??
 	switch (is_short) {
 		case 1:
 			if (options->short_name == 0) {
@@ -180,7 +182,7 @@ int args_type_check(char * arg, args_option_t * option) {
 }
 
 void args_call_callback(void * p, args_option_t * option, char * arg, void * priv) {
-	// todo: remove the amount of ifs, holy moly
+	// todo: remove this absurd amount of ifs, holy moly
 	if (option->wants_argument && !arg && (option->flags & ARG_ARGUMENT_REQUIRED) != 0) {
 		return;
 	}
@@ -204,8 +206,8 @@ void args_call_callback(void * p, args_option_t * option, char * arg, void * pri
 		return;
 	}
 	if (settings.no_casts || ((option->flags & ARG_NO_CASTS) != 0) || option->type == TYPE_NULL) {
-		args_int_callback_t callback = (args_int_callback_t) p;
-		callback(priv, option, (int64_t) arg, 1);
+		args_address_callback_t callback = (args_address_callback_t) p;
+		callback(priv, option, (int64_t) (uintptr_t) arg, 1);
 		return;
 	}
 	switch (option->type) {
@@ -216,6 +218,15 @@ void args_call_callback(void * p, args_option_t * option, char * arg, void * pri
 		}
 		case TYPE_INT: {
 			args_int_callback_t callback = (args_int_callback_t) p;
+			if (!arg) {
+				callback(priv, option, 0, 0);
+				break;
+			}
+			callback(priv, option, strtolhauto(arg), 1);
+			break;
+		}
+		case TYPE_ADDRESS: {
+			args_address_callback_t callback = (args_address_callback_t) p;
 			if (!arg) {
 				callback(priv, option, 0, 0);
 				break;

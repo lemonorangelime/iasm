@@ -2,6 +2,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <limits.h>
+#include <stdio.h>
 
 uint64_t strtolh(const char * nptr, char ** endptr, int base) {
 	register const char *s = nptr;
@@ -9,7 +10,9 @@ uint64_t strtolh(const char * nptr, char ** endptr, int base) {
 	register int c;
 	register uint64_t cutoff;
 	register int neg = 0, any, cutlim;
-	while (isspace(c)) { c = *s++; }
+	do {
+		c = *s++;
+	} while (isspace(c));
 	if (c == '-') {
 		neg = 1;
 		c = *s++;
@@ -51,24 +54,24 @@ uint64_t strtolh(const char * nptr, char ** endptr, int base) {
 	} else if (neg) {
 		acc = -acc;
 	}
-	if (endptr != 0) {
+	if (endptr != NULL) {
 		*endptr = (char *) (any ? s - 1 : nptr);
 	}
 	return acc;
 }
 
 uint64_t strtolhauto(char * string) {
-	if ((string[0] == u'0') && (string[1] == u'x')) {
-		return strtolh(string, 0, 16);
-	} else if ((string[0] == u'0') && (string[1] == u'b')) {
-		return strtolh(string + 2, 0, 2);
-	} else if (string[0] == u'#') {
-		return strtolh(string + 1, 0, 16);
-	} else if ((string[0] == u'0') && (string[1] == u'o')) {
-		return strtolh(string + 2, 0, 8);
-	} else if (string[strlen(string) - 1] == u'h') {
-		return strtolh(string, 0, 16);
+	if ((string[0] == '0') && (string[1] == 'x')) {
+		return strtolh(string, NULL, 16);
+	} else if ((string[0] == '0') && (string[1] == 'b')) {
+		return strtolh(string + 2, NULL, 2);
+	} else if (string[0] == '#') {
+		return strtolh(string + 1, NULL, 16);
+	} else if ((string[0] == '0') && (string[1] == 'o')) {
+		return strtolh(string + 2, NULL, 8);
+	} else if (string[strlen(string) - 1] == 'h') {
+		return strtolh(string, NULL, 16);
 	} else {
-		return strtolh(string, 0, 10);
+		return strtolh(string, NULL, 10);
 	}
 }

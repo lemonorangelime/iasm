@@ -506,6 +506,9 @@ sym setup_cpu
 	mov ax, gs
 	mov WORD [rel gs_save], ax
 
+	mov rax, 0x202
+	mov QWORD [rel rflags_save], rax
+
 	mov eax, 7
 	mov ecx, 1
 	cpuid

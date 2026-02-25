@@ -183,7 +183,17 @@ int decode_type(char * type) {
 		return CHARACTER;
 	}
 
-	return INT8;
+	if (strcasecmp(type, "iasm_internal_type_null") == 0) {
+		return IASM_TYPE_NULL;
+	} else if (strcasecmp(type, "iasm_internal_type_type") == 0) {
+		return IASM_TYPE_TYPE;
+	} else if (strcasecmp(type, "iasm_internal_type_operator") == 0) {
+		return IASM_TYPE_OPERATOR;
+	} else if ((strcasecmp(type, "iasm_internal_type_function") == 0) || strcasecmp(type, "function") == 0) {
+		return IASM_TYPE_FUNCTION;
+	}
+
+	return IASM_TYPE_NULL;
 }
 
 int decode_rgb_style(char * style) {
@@ -197,6 +207,7 @@ int decode_rgb_style(char * style) {
 
 int decode_type_size(int type) {
 	switch (type) {
+		case IASM_TYPE_FUNCTION: return sizeof(uintptr_t);
 		case INT8192: return 1024;
 		case INT512: return 64;
 		case INT256: return 32;
@@ -211,6 +222,7 @@ int decode_type_size(int type) {
 		case FLOAT32:
 		case BIN32:
 		case BOOL_I32:
+		case IASM_TYPE_TYPE:
 		case INT32: return 4;
 		case FLOAT16:
 		case BIN16:
@@ -222,6 +234,8 @@ int decode_type_size(int type) {
 		case BOOL:
 		case BOOL_I8:
 		case BIN8:
+		case IASM_TYPE_NULL:
+		case IASM_TYPE_OPERATOR:
 		case INT8: return 1;
 		case IPV4: return 4;
 		case IPV6: return 16;
@@ -299,6 +313,9 @@ char * decode_type_separator(int type) {
 		case MCDONALDS_GB:
 		case MCDONALDS_DE:
 		case MCDONALDS_SA:
+		case IASM_TYPE_TYPE:
+		case IASM_TYPE_OPERATOR:
+		case IASM_TYPE_FUNCTION:
 		case INT8: return ", ";
 		case STRING: return "";
 		case MAT3X3_F32:
@@ -317,6 +334,7 @@ char * decode_type_separator(int type) {
 		case MAT16X32_F16:
 		case MAT16X32_B16:
 		case MAT16X64_I8: return "\n";
+		case IASM_TYPE_NULL: return "";
 	}
 	return ", ";
 }
@@ -364,7 +382,7 @@ void print_mcdonalds(mcdonalds_item_t * items, uint64_t bcd) {
 		}
 		items++;
 	}
-	printf("?");
+	printf("???");
 }
 
 void print_rgb(void * p, int type) {
@@ -489,6 +507,16 @@ int print_typed_value(void * p, int type, int remaining) {
 		case MAT16X32_F16:	print_matrix(p, 16, 32, FLOAT16); break;
 		case MAT16X32_B16:	print_matrix(p, 16, 32, FLOAT16); break; // todo...
 		case MAT16X64_I8:	print_matrix(p, 16, 64, INT8); break;
+		case IASM_TYPE_TYPE:	printf("???"); break;
+		case IASM_TYPE_OPERATOR:printf("???"); break;
+		case IASM_TYPE_FUNCTION:
+			if (sizeof(uintptr_t) == 8) {
+				printf("@0x%.16lx(...)", *int64);
+				break;
+			}
+			printf("@0x%.8lx(...)", *int32);
+			break;
+		case IASM_TYPE_NULL:	break;
 	}
 	return size;
 }

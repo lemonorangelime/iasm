@@ -15,7 +15,7 @@ ASM := nasm
 ASMFLAGS := -f elf32 -I include/
 
 CC := gcc
-CCFLAGS := -Wno-stringop-overflow -Wno-stringop-overread -Wno-unused-result -Wno-format -rdynamic -flto -s -Oz -ftree-vectorize -fomit-frame-pointer -m32 -mhard-float -fno-stack-protector -Iinclude -Iarch/$(ARCH)/include -I$(ZYD_INC) -Wno-address-of-packed-member -z noexecstack -z noseparate-code
+CCFLAGS := -Wno-stringop-overflow -Wno-stringop-overread -Wno-unused-result -Wno-format -rdynamic -flto -s -Oz -ftree-vectorize -fomit-frame-pointer -m32 -mhard-float -fno-stack-protector -Iinclude -Iarch/$(ARCH)/include -I$(ZYD_INC) -Wno-address-of-packed-member -z noexecstack -z noseparate-code -lm
 
 LD := ld
 LDFLAGS := --strip-all --discard-all --discard-locals --strip-debug

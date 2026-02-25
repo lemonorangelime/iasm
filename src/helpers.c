@@ -129,7 +129,7 @@ int resolve_register_or_label(char * name, uintptr_t * p, int * size) {
 }
 
 // like anything at all
-int resolve_any_register_or_label(char * name, void * p, int * size, int * type) {
+int resolve_any_register_or_label(char * name, void * p, int * size, int * type, int * reassignable) {
 	uintptr_t address = 0;
 	if (resolve_label(name, &address)) {
 		uint64_t * regp = lookup_register(name);
@@ -193,5 +193,7 @@ int resolve_any_register_or_label(char * name, void * p, int * size, int * type)
 	}
 	*(uintptr_t *) p = address;
 	*size = sizeof(uintptr_t);
+	*type = (sizeof(uintptr_t) == 8) ? INT64 : INT32;
+	*reassignable = 1;
 	return 0;
 }

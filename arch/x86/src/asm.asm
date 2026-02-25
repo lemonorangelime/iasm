@@ -337,6 +337,10 @@ sym setup_cpu
 	mov WORD [rel fs_save], ax
 	mov ax, gs
 	mov WORD [rel gs_save], ax
+
+	mov eax, 0x202
+	mov DWORD [rel eflags_save], eax
+
 	pop ax
 	ret
 

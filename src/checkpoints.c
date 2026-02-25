@@ -17,9 +17,8 @@ char * get_checkpoint_statement() {
 	return checkpoints[current_checkpoint].statement;
 }
 
-void checkpoint_save(char * statement) {
+void checkpoint_save_p(checkpoint_t * checkpoint, char * statement) {
         ssize_t size = asm_src_fdsize();
-	checkpoint_t * checkpoint = &checkpoints[current_checkpoint];
 	memcpy(checkpoint->code_contents, exec_buffer, EXEC_SIZE);
 	memcpy(checkpoint->jump_table, jmp_buffer, JMP_SIZE);
 	memcpy(checkpoint->stack_contents, stack_buffer, STACK_SIZE);
@@ -39,8 +38,7 @@ void checkpoint_save(char * statement) {
 	checkpoint->in_use = 1;
 }
 
-void checkpoint_load() {
-	checkpoint_t * checkpoint = &checkpoints[current_checkpoint];
+void checkpoint_load_p(checkpoint_t * checkpoint) {
 	memcpy(exec_buffer, checkpoint->code_contents, EXEC_SIZE);
 	memcpy(jmp_buffer, checkpoint->jump_table, JMP_SIZE);
 	memcpy(stack_buffer, checkpoint->stack_contents, STACK_SIZE);
@@ -49,6 +47,16 @@ void checkpoint_load() {
 	}
 	exec_buffer_size = checkpoint->code_size;
 	arch_load_registers(checkpoint->registers_save);
+}
+
+void checkpoint_save(char * statement) {
+	checkpoint_t * checkpoint = &checkpoints[current_checkpoint];
+	checkpoint_save_p(checkpoint, statement);
+}
+
+void checkpoint_load() {
+	checkpoint_t * checkpoint = &checkpoints[current_checkpoint];
+	checkpoint_load_p(checkpoint);
 }
 
 int checkpoint_limit(int checkpoint) {

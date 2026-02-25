@@ -14,10 +14,11 @@
 #include <iasm/vars.h>
 #include <iasm/setup.h>
 
-// stack and ram must be fixed
-uint8_t * exec_buffer  = (uint8_t *) EXEC_ADDRESS;
-uint8_t * jmp_buffer  = (uint8_t *) JMP_ADDRESS;
-uint8_t * stack_buffer = (uint8_t *) STACK_ADDRESS;
+// // stack and ram must be fixed
+// not anymore buddy
+uint8_t * exec_buffer  = NULL;
+uint8_t * jmp_buffer   = NULL;
+uint8_t * stack_buffer = NULL;
 size_t exec_buffer_size = 0;
 size_t jmp_buffer_size = 0;
 
@@ -53,6 +54,10 @@ int call_nasm(int * pipefd) {
 }
 
 void setup_executable_buffer() {
+	exec_buffer  = (uint8_t *) EXEC_ADDRESS;
+	jmp_buffer   = (uint8_t *) JMP_ADDRESS;
+	stack_buffer = (uint8_t *) STACK_ADDRESS;
+
 	exec_buffer = (uint8_t *) mmap(exec_buffer, EXEC_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0); // whatever :shrug:
 	jmp_buffer = (uint8_t *) mmap(jmp_buffer, JMP_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0); // whatever :shrug:
 	stack_buffer = (uint8_t *) mmap(stack_buffer, STACK_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0); // executable stack because yeah

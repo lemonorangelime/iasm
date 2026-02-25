@@ -1,0 +1,14 @@
+## [5.0.0]
+
+### Added
+ - This change log
+ - Set flags register to sane value
+ - More advanced `print` command operation, support for expression evaluation with registers and floating point values
+ - `--code-address`, `--stack-address`, and `--jmptable-address` command line arguments for setting memory offsets
+
+### Changed
+ - Fix AVX-512 xsave offset calculation yet again
+ - Fix 8-bit high registers (ah, bh, ch, ...)
+ - Changed --sdm shorthand from -s to -m
+ - Fix strtolhauto() and strtolh()
+ - Move stack to 0x70000000

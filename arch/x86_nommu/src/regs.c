@@ -67,6 +67,9 @@ void read_zmm(void * p, uint8_t * buffer) {
 	uint32_t trash = 0;
 	uint32_t offset = 0;
 	cpuid(0x0d, 0, 6, 0, &trash, &offset, &trash, &trash);
+	if (offset == 0) { // no hint
+		offset = (uintptr_t) &fpu_save.zmm0_high;
+	}
 
 	p = (void *) ((uintptr_t) &fpu_save) + offset + (index << 5);
 	memcpy(buffer + 32, p, 32);
@@ -286,7 +289,7 @@ void * lookup_register(char * name) {
 		return NULL;
 	}
 	index -= 1;
-	return &registers[index];
+	return ((void *) &registers[index]) + (!!lookup_index(reg8hnames, reg_count, name));
 }
 
 fpu_float_t * lookup_fpuregister(char * name) {

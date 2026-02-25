@@ -326,7 +326,7 @@ sym fpu_float_to_double
 	ret
 
 sym setup_cpu
-	push ax
+	push eax
 	mov ax, ds
 	mov WORD [rel ds_save], ax
 	mov ax, ss
@@ -337,7 +337,11 @@ sym setup_cpu
 	mov WORD [rel fs_save], ax
 	mov ax, gs
 	mov WORD [rel gs_save], ax
-	pop ax
+
+	mov eax, 0x202
+	mov DWORD [rel eflags_save], eax
+
+	pop eax
 	ret
 
 sym setup_fpu

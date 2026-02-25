@@ -389,11 +389,12 @@ int execute_builtins(char * line) {
 	if (strlen(line) > 9 && memcmp(line, "assemble ", 9) == 0) {
 		return assemble_function(line + 9);
 	}
-	if (sscanf(line, "print %s%s", buffer, buffer2) > 0) {
-		int swap = *buffer2;
-		char * name = swap ? buffer2 : buffer;
-		char * type = swap ? buffer : buffer2;
-		return print_function(name, type);
+	if (memcmp(line, "print ", 6) == 0) {
+	//if (sscanf(line, "print %s%s", buffer, buffer2) > 0) {
+		//int swap = *buffer2;
+		//char * name = swap ? buffer2 : buffer;
+		//char * type = swap ? buffer : buffer2;
+		return print_function(line + 6); //name, type);
 	}
 	return examine(line);
 }
@@ -401,7 +402,7 @@ int execute_builtins(char * line) {
 
 // topics
 
-
+// this is all super super outdated...
 help_topic_t help_topics[] = {
 	{"xmm_type",	"sets default dump/print type for xmm registers\ntype can be FLOAT64/32/16/8 or INT256/128/64/32/16/8"},
 	{"ymm_type",	"sets default dump/print type for ymm registers\ntype can be FLOAT64/32/16/8 or INT256/128/64/32/16/8"},

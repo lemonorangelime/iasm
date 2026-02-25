@@ -1,9 +1,9 @@
 #pragma once
 
-#define STACK_ADDRESS 0x00800000
-#define EXEC_ADDRESS 0x7f000000
-#define JMP_ADDRESS 0x01000000
+extern uintptr_t STACK_ADDRESS;
+extern uintptr_t EXEC_ADDRESS;
+extern uintptr_t JMP_ADDRESS;
 
-#define STACK_SIZE (4096 * 16)
-#define EXEC_SIZE 0x00080000
-#define JMP_SIZE 0x00080000
+extern uintptr_t STACK_SIZE;
+extern uintptr_t EXEC_SIZE;
+extern uintptr_t JMP_SIZE;
