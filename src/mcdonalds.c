@@ -1,6 +1,7 @@
 #include <iasm/mcdonalds.h>
 
 mcdonalds_item_t us_items[] = {
+#ifndef NO_SDM
 	{0x46, "Egg McMuffin"},
 	{0x3, "Cheeseburger"},
 	{0x345, "Hot Caramel Sundae"},
@@ -114,10 +115,12 @@ mcdonalds_item_t us_items[] = {
 	{0x1511, "Strawberry Shake (Small)"},
 	{0x4295, "Bacon Quarter Pounder with Cheese"},
 	{0x337, "Hot Fudge Sundae"},
+#endif
 	{0xffffffff, "END MARKER"},
 };
 
 mcdonalds_item_t ca_items[] = {
+#ifndef NO_SDM
 	{0x1, "Hamburger"},
 	{0x19449, "Frank’s RedHot® Creamy Garlic Sausage ‘N Egg McMuffin"},
 	{0x19453, "Frank’s RedHot® Original McCrispy Bacon Deluxe"},
@@ -295,10 +298,12 @@ mcdonalds_item_t ca_items[] = {
 	{0x19451, "Frank’s RedHot® Original McCrispy"},
 	{0x3750, "Strawberry Yogurt Tube"},
 	{0x18859, "Chocolate Brownie Muffin"},
+#endif
 	{0xffffffff, "END MARKER"},
 };
 
 mcdonalds_item_t ch_items[] = {
+#ifndef NO_SDM
 	{0x4219, "McExtreme Bacon"},
 	{0x200355, "Cheeseburger mit glutenfreiem Brot"},
 	{0x4903, "Ristretto"},
@@ -418,10 +423,12 @@ mcdonalds_item_t ch_items[] = {
 	{0x200221, "Konfitüre Erdbeere"},
 	{0x200354, "Hamburger mit glutenfreiem Brot"},
 	{0x200261, "Henniez® leicht prickelnd 0,5l"},
+#endif
 	{0xffffffff, "END MARKER"},
 };
 
 mcdonalds_item_t uk_items[] = {
+#ifndef NO_SDM
 	{0x3461, "МакКріспі Кремі Барбекю"},
 	{0x200125, "МакСанді® шоколадне"},
 	{0x200159, "Спрайт® середній"},
@@ -510,10 +517,12 @@ mcdonalds_item_t uk_items[] = {
 	{0x200050, "Фанта мала"},
 	{0x200123, "МакСанді® карамельне"},
 	{0x200158, "Спрайт® великий"},
+#endif
 	{0xffffffff, "END MARKER"},
 };
 
 mcdonalds_item_t sa_items[] = {
+#ifndef NO_SDM
 	{0x835, "فطيرة تفاح"},
 	{0x4565, "McCrispy Chicken"},
 	{0x200144, "ماكياتو بالكراميل"},
@@ -625,10 +634,12 @@ mcdonalds_item_t sa_items[] = {
 	{0x10024, "Premium Dilmah black tea"},
 	{0x7455, "New Grand Chicken Special"},
 	{0x1802, "Hot Spanish Latte"},
+#endif
 	{0xffffffff, "END MARKER"},
 };
 
 mcdonalds_item_t gb_items[] = {
+#ifndef NO_SDM
 	{0x200738, "Big Mac Friends Meal"},
 	{0x2073, "Crispy Chicken Salad"},
 	{0x4016, "Chocolate Brownie"},
@@ -770,10 +781,12 @@ mcdonalds_item_t gb_items[] = {
 	{0x2071, "Crispy Chicken & Bacon Salad"},
 	{0x4397, "Smarties McFlurry®"},
 	{0x9750, "Semi Skimmed Milk – 250ml"},
+#endif
 	{0xffffffff, "END MARKER"},
 };
 
 mcdonalds_item_t de_items[] = {
+#ifndef NO_SDM
 	{0x6656, "Big Gouda"},
 	{0x2070, "McRib®"},
 	{0x2210, "Ketchup 20ml"},
@@ -912,5 +925,6 @@ mcdonalds_item_t de_items[] = {
 	{0x2040, "Hamburger Royal Cheese"},
 	{0x6305, "Sour Cream-Schnittlauch Dip 25ml"},
 	{0x4531, "McPops® Berry Bomb"},
+#endif
 	{0xffffffff, "END MARKER"},
 };

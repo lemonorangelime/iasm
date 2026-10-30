@@ -10,8 +10,8 @@ depends:
 	git pull; \
 	if [ ! -d "./amalgamated-dist/" ]; then \
 		python3 assets/amalgamate.py; \
-		gcc -fomit-frame-pointer -rdynamic -mhard-float -flto -s -Oz -msse2 amalgamated-dist/Zydis.c -Iamalgamated-dist/ -c -o zydis64.o; \
-		gcc -fomit-frame-pointer -rdynamic -mhard-float -flto -s -Oz -m32 amalgamated-dist/Zydis.c -Iamalgamated-dist/ -c -o zydis32.o; \
+		gcc -fomit-frame-pointer -rdynamic -mhard-float -flto -s -Oz -msse2 -m64 amalgamated-dist/Zydis.c -Iamalgamated-dist/ -c -o zydis64.o; \
+		gcc -fomit-frame-pointer -rdynamic -mhard-float -flto -s -Oz -msse2 -m32 amalgamated-dist/Zydis.c -Iamalgamated-dist/ -c -o zydis32.o; \
 		strip zydis64.o; \
 		strip zydis32.o; \
 	fi
@@ -20,10 +20,14 @@ depends:
 clean:
 	rm -rf ./zydis/amalgamated-dist/
 	make -f Makefile_x86_64 clean
+	make -f Makefile_x86_64_nosdm clean
+	make -f Makefile_x86_nosdm clean
 	make -f Makefile_x86_nommu clean
 	make -f Makefile_x86 clean
 
 %:
 	make -f Makefile_x86_64 $@
+	make -f Makefile_x86_64_nosdm $@
+	make -f Makefile_x86_nosdm $@
 	make -f Makefile_x86_nommu $@
 	make -f Makefile_x86 $@

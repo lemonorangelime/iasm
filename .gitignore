@@ -21,6 +21,7 @@ x86_64-iasm
 x86_64-iasm.gz
 x86_64-iasm.xz
 replay.txt
+format.txt
 
 # there's like 400mb of trash in there
 sdm/

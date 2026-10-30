@@ -36,6 +36,21 @@ void args_address_callback(void * priv, args_option_t * option, uintptr_t arg, i
 	}
 }
 
+void args_size_callback(void * priv, args_option_t * option, uintptr_t arg, int present) {
+	if (!present) { return; }
+
+	if (strcmp(option->long_name, "code-size") == 0 || strcmp(option->long_name, "exec-size") == 0 || strcmp(option->long_name, "text-size") == 0) {
+		EXEC_SIZE = arg;
+		return;
+	} else if (strcmp(option->long_name, "stack-size") == 0) {
+		STACK_SIZE = arg;
+		return;
+	} else if (strcmp(option->long_name, "trampoline-size") == 0 || strcmp(option->long_name, "jmptable-size") == 0 || strcmp(option->long_name, "jumptable-size") == 0) {
+		JMP_SIZE = arg;
+		return;
+	}
+}
+
 void args_replay_callback(void * priv, args_option_t * option, char * arg) {
 	if (!arg) { return; } // whatever
 	replay_file = arg;
@@ -116,6 +131,16 @@ int handle_args(int argc, char * argv[]) {
 		{0,   "trampoline-address",  1, TYPE_ADDRESS, 0, args_address_callback,   .help=""}, // alias
 		{0,   "jmptable-address",    1, TYPE_ADDRESS, 0, args_address_callback,   .help=""}, // alias
 		{'j', "jumptable-address",   1, TYPE_ADDRESS, 0, args_address_callback,   .help="set jump table memory address (MMU required)"},
+		{0,   NULL,                  0, TYPE_NULL,    0, NULL,                    .help=""}, // padding
+		{0,   "text-size",           1, TYPE_ADDRESS, 0, args_size_callback,      .help=""}, // alias
+		{0,   "exec-size",           1, TYPE_ADDRESS, 0, args_size_callback,      .help=""}, // alias
+		{0,   "code-size",           1, TYPE_ADDRESS, 0, args_size_callback,      .help="set code size (bytes)"},
+		{0,   NULL,                  0, TYPE_NULL,    0, NULL,                    .help=""}, // padding
+		{0,   "stack-size",          1, TYPE_ADDRESS, 0, args_size_callback,      .help="set stack size (bytes)"},
+		{0,   NULL,                  0, TYPE_NULL,    0, NULL,                    .help=""}, // padding
+		{0,   "trampoline-size",     1, TYPE_ADDRESS, 0, args_size_callback,      .help=""}, // alias
+		{0,   "jmptable-size",       1, TYPE_ADDRESS, 0, args_size_callback,      .help=""}, // alias
+		{0,   "jumptable-size",      1, TYPE_ADDRESS, 0, args_size_callback,      .help="set jump table size (bytes)"},
 		{0,   NULL,                  0, TYPE_NULL,    0, NULL,                    .help=""}, // padding
 		{'m', "sdm",                 1, TYPE_STRING,  0, args_sdm_callback,       .help="print an Intel SDM entry, then exit"},
 		{0,   "isdm",                1, TYPE_STRING,  0, args_sdm_callback,       .help=""}, // alias

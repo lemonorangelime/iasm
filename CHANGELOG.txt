@@ -12,3 +12,15 @@
  - Changed --sdm shorthand from -s to -m
  - Fix strtolhauto() and strtolh()
  - Move stack to 0x70000000
+
+## [5.0.1]
+
+### Changed
+ - Shuffle command line arguments around to be more consistent
+
+## [5.0.2]
+
+### Changed
+ - Fix argument typing in examiner
+ - Add nosdm build target
+ - Add memory sizing command line arguments

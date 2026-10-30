@@ -134,13 +134,14 @@ int examine(char * line) {
 
 	char * specifier = examiner_type_specifier(type, size);
 	void * p = (void *) address;
-	int printed = (type == 'i') ? 0 : printf("0x%.16llx: ", p);
+	int printed = (type == 'i') ? 0 : printf("0x%.16llx: ", (uint64_t) (uintptr_t) p);
 	while (count--) {
 		if (type == 'i') {
-			char s[16] = {0};
+			char s[64] = {0};
 			void * oldp = p;
+			memset(s, 0, 64);
 			p += disasm_one(p, s);
-			printf("0x%.16llx: %s\n", oldp, s);
+			printf("0x%.16llx: %s\n", (uint64_t) (uintptr_t) oldp, s);
 		} else {
 			uint64_t data = examiner_read(&p, size);
 			if (signaled) { // shit
@@ -157,7 +158,7 @@ int examine(char * line) {
 			if ((printed > 80) && count) {
 				printed = 0;
 				write(1, "\n", 1);
-				printed += printf("0x%.16llx: ", p);
+				printed += printf("0x%.16llx: ", (uint64_t) (uintptr_t) p);
 				fflush(stdout);
 			}
 		}

@@ -18,7 +18,7 @@
 
 #define operator_function_innard(operation) \
 	if (left->type == FLOAT64 || right->type == FLOAT64) { \
-		/* this is really slow... and (more possibly importantly) really really stupid */ \
+		/* this is really slow... and (possibly more importantly) really really stupid */ \
 		double l = left->type == FLOAT64 ? (*(double *) left->buffer) : ((double) *(uint64_t *) left->buffer); \
 		double r = right->type == FLOAT64 ? (*(double *) right->buffer) : ((double) *(uint64_t *) right->buffer); \
 		double * lb = &l; \
@@ -428,12 +428,12 @@ int read_token(char * token, printer_state_t * state, printer_token_t ** outputp
 			return 1;
 		case '=':
 			// this shit dont make sense
-			handle_operator(ASSOCIATIVITY_LEFT, 6, outputp, operatorp, output_count, operator_count);
-			push_token(operatorp, ctoken(OPERATOR_CMP_E), 1, ASSOCIATIVITY_LEFT, 6, IASM_TYPE_OPERATOR, operator_count);
 			if (check_next_char(token, '=')) {
+				handle_operator(ASSOCIATIVITY_LEFT, 6, outputp, operatorp, output_count, operator_count);
+				push_token(operatorp, ctoken(OPERATOR_CMP_E), 1, ASSOCIATIVITY_LEFT, 6, IASM_TYPE_OPERATOR, operator_count);
 				return 2;
 			}
-			return 1;
+			return -1;
 		case '~':
 			handle_operator(ASSOCIATIVITY_RIGHT, 13, outputp, operatorp, output_count, operator_count);
 			push_token(operatorp, ctoken(OPERATOR_BIT_NOT), 1, ASSOCIATIVITY_RIGHT, 13, IASM_TYPE_OPERATOR, operator_count);
@@ -446,7 +446,9 @@ int read_token(char * token, printer_state_t * state, printer_token_t ** outputp
 			handle_operator(ASSOCIATIVITY_RIGHT, 13, outputp, operatorp, output_count, operator_count);
 			push_token(operatorp, ctoken(OPERATOR_LOG_NOT), 1, ASSOCIATIVITY_RIGHT, 13, IASM_TYPE_OPERATOR, operator_count);
 			return 1;
-		case '(': push_token(operatorp, ctoken(OPERATOR_OPEN_PARENTHESIS), 1, ASSOCIATIVITY_RIGHT, 1, IASM_TYPE_OPERATOR, operator_count); return 1;
+		case '(':
+			push_token(operatorp, ctoken(OPERATOR_OPEN_PARENTHESIS), 1, ASSOCIATIVITY_RIGHT, 1, IASM_TYPE_OPERATOR, operator_count);
+			return 1;
 		case ')':
 			op_stack_pop_parenth(outputp, operatorp, output_count, operator_count);
 			return 1;
